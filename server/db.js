@@ -65,6 +65,27 @@ function nameExists(name) {
   return !!findUserByName(name);
 }
 
+function getUserById(id) {
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+}
+
+function getAllUsers() {
+  return db.prepare('SELECT id, name, created_at AS createdAt FROM users ORDER BY name COLLATE NOCASE').all();
+}
+
+function renameUser(id, newName) {
+  const key = normalizeName(newName);
+  const existing = db.prepare('SELECT id FROM users WHERE name_key = ? AND id != ?').get(key, id);
+  if (existing) {
+    const err = new Error('name_taken');
+    err.code = 'NAME_TAKEN';
+    throw err;
+  }
+  const info = db.prepare('UPDATE users SET name = ?, name_key = ? WHERE id = ?').run(newName.trim(), key, id);
+  if (info.changes === 0) return null;
+  return getUserById(id);
+}
+
 function saveResult({ userId, testId, score, total, answers }) {
   const stmt = db.prepare(
     'INSERT INTO results (user_id, test_id, score, total, answers) VALUES (?, ?, ?, ?, ?)'
@@ -140,6 +161,9 @@ module.exports = {
   createUser,
   findUserByName,
   nameExists,
+  getUserById,
+  getAllUsers,
+  renameUser,
   saveResult,
   getLeaderboard,
   getResultDetail,

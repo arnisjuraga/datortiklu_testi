@@ -78,15 +78,16 @@ nameForm.addEventListener('submit', async (e) => {
     return;
   }
 
-  saveName(data.name);
+  saveIdentity(data.id, data.name);
   showLoggedIn(data.name);
 });
 
-(function init() {
+(async function init() {
   renderTests();
   const saved = getSavedName();
   if (saved) {
-    showLoggedIn(saved);
+    const fresh = await refreshIdentity();
+    showLoggedIn(fresh || saved);
   } else {
     showGate();
   }

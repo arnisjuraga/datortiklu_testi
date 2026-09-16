@@ -1,6 +1,6 @@
 const testId = location.pathname.split('/').filter(Boolean)[1];
 
-const playerName = getSavedName();
+let playerName = getSavedName();
 if (!playerName) {
   location.href = '/?next=' + encodeURIComponent(location.pathname);
 }
@@ -221,6 +221,7 @@ retryBtn.addEventListener('click', () => resetQuiz(true));
 
 (async function init() {
   if (!playerName) return;
+  playerName = await refreshIdentity();
   playerNameEl.textContent = playerName;
 
   const { ok, data } = await apiGet(`/api/tests/${testId}`);

@@ -8,6 +8,7 @@ const loginBtn = document.getElementById('loginBtn');
 const loginErr = document.getElementById('loginErr');
 const logoutBtn = document.getElementById('logoutBtn');
 const testModeList = document.getElementById('testModeList');
+const userList = document.getElementById('userList');
 const resultsBody = document.getElementById('resultsBody');
 const resultsEmpty = document.getElementById('resultsEmpty');
 
@@ -98,6 +99,67 @@ function renderTestModes(tests) {
   });
 }
 
+function renderUsers(users) {
+  userList.innerHTML = '';
+  if (!users.length) {
+    userList.innerHTML = '<p class="empty">Vēl neviens nav reģistrējies.</p>';
+    return;
+  }
+  users.forEach((u) => {
+    const row = document.createElement('div');
+    row.className = 'test-item';
+    row.dataset.userId = u.id;
+
+    const view = document.createElement('div');
+    view.className = 'user-row-view';
+    view.style.cssText = 'display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;';
+    view.innerHTML = `
+      <h3 style="font-size:1rem;">${u.name}</h3>
+      <button type="button" class="hint rename-btn">Pārsaukt</button>
+    `;
+
+    row.appendChild(view);
+    userList.appendChild(row);
+
+    view.querySelector('.rename-btn').addEventListener('click', () => {
+      row.innerHTML = '';
+      const edit = document.createElement('div');
+      edit.style.cssText = 'display:flex;gap:10px;align-items:center;width:100%;';
+      edit.innerHTML = `
+        <input type="text" class="rename-input" value="${u.name.replace(/"/g, '&quot;')}" maxlength="40" style="flex:1;">
+        <button type="button" class="btn-primary rename-save" style="height:38px;">Saglabāt</button>
+        <button type="button" class="hint rename-cancel">Atcelt</button>
+      `;
+      row.appendChild(edit);
+      const input = edit.querySelector('.rename-input');
+      input.focus();
+      input.select();
+
+      const errEl = document.createElement('div');
+      errEl.className = 'err-msg';
+      row.appendChild(errEl);
+
+      edit.querySelector('.rename-cancel').addEventListener('click', () => loadAdminData());
+
+      const save = async () => {
+        const newName = input.value.trim();
+        if (!newName) return;
+        const { ok, data } = await adminPost(`/api/admin/users/${u.id}/rename`, { name: newName });
+        if (!ok) {
+          errEl.textContent = data.error || 'Kļūda.';
+          return;
+        }
+        loadAdminData();
+      };
+      edit.querySelector('.rename-save').addEventListener('click', save);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') save();
+        if (e.key === 'Escape') loadAdminData();
+      });
+    });
+  });
+}
+
 function renderResults(results) {
   resultsBody.innerHTML = '';
   resultsEmpty.hidden = !!results.length;
@@ -117,18 +179,20 @@ function renderResults(results) {
 }
 
 async function loadAdminData() {
-  const [testsRes, resultsRes] = await Promise.all([
+  const [testsRes, usersRes, resultsRes] = await Promise.all([
     adminGet('/api/admin/tests'),
+    adminGet('/api/admin/users'),
     adminGet('/api/admin/results'),
   ]);
 
-  if (testsRes.status === 401 || resultsRes.status === 401) {
+  if (testsRes.status === 401 || usersRes.status === 401 || resultsRes.status === 401) {
     clearPw();
     showLogin('Sesija beigusies. Ievadi paroli vēlreiz.');
     return;
   }
 
   if (testsRes.ok) renderTestModes(testsRes.data);
+  if (usersRes.ok) renderUsers(usersRes.data);
   if (resultsRes.ok) renderResults(resultsRes.data);
 }
 

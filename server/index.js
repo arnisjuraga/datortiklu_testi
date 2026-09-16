@@ -76,7 +76,7 @@ app.post('/api/register', (req, res) => {
 
   try {
     const user = db.createUser(name);
-    res.json({ ok: true, name: user.name });
+    res.json({ ok: true, id: user.id, name: user.name });
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
       return res.status(409).json({ error: `Vārds "${name}" jau ir aizņemts. Izvēlies citu.` });
@@ -88,6 +88,12 @@ app.post('/api/register', (req, res) => {
 app.post('/api/check-name', (req, res) => {
   const name = (req.body?.name || '').trim();
   res.json({ exists: name ? db.nameExists(name) : false });
+});
+
+app.get('/api/me/:userId', (req, res) => {
+  const user = db.getUserById(req.params.userId);
+  if (!user) return res.status(404).json({ error: 'Lietotājs nav atrasts.' });
+  res.json({ id: user.id, name: user.name });
 });
 
 app.post('/api/results', (req, res) => {
@@ -171,6 +177,29 @@ app.post('/api/admin/tests/:testId/enabled', requireAdmin, (req, res) => {
   }
   const saved = db.setTestEnabled(req.params.testId, enabled);
   res.json({ ok: true, enabled: saved });
+});
+
+app.get('/api/admin/users', requireAdmin, (req, res) => {
+  res.json(db.getAllUsers());
+});
+
+app.post('/api/admin/users/:userId/rename', requireAdmin, (req, res) => {
+  const newName = (req.body?.name || '').trim();
+  if (!newName) return res.status(400).json({ error: 'Jāievada vārds.' });
+  if (newName.length > 40) return res.status(400).json({ error: 'Vārds ir pārāk garš.' });
+
+  const user = db.getUserById(req.params.userId);
+  if (!user) return res.status(404).json({ error: 'Lietotājs nav atrasts.' });
+
+  try {
+    const updated = db.renameUser(req.params.userId, newName);
+    res.json({ ok: true, id: updated.id, name: updated.name });
+  } catch (err) {
+    if (err.code === 'NAME_TAKEN' || err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.status(409).json({ error: `Vārds "${newName}" jau ir aizņemts.` });
+    }
+    throw err;
+  }
 });
 
 app.get('/api/admin/results', requireAdmin, (req, res) => {
