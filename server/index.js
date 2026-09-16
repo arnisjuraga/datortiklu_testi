@@ -74,8 +74,15 @@ app.post('/api/register', (req, res) => {
     return res.status(409).json({ error: `Vārds "${name}" jau ir aizņemts. Izvēlies citu.` });
   }
 
-  const user = db.createUser(name);
-  res.json({ ok: true, name: user.name });
+  try {
+    const user = db.createUser(name);
+    res.json({ ok: true, name: user.name });
+  } catch (err) {
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.status(409).json({ error: `Vārds "${name}" jau ir aizņemts. Izvēlies citu.` });
+    }
+    throw err;
+  }
 });
 
 app.post('/api/check-name', (req, res) => {
@@ -84,9 +91,12 @@ app.post('/api/check-name', (req, res) => {
 });
 
 app.post('/api/results', (req, res) => {
-  const { name, testId, score, total } = req.body || {};
+  const { name, testId, score, total, answers } = req.body || {};
   if (!name || !testId || typeof score !== 'number' || typeof total !== 'number') {
     return res.status(400).json({ error: 'Nepilnīgi dati.' });
+  }
+  if (answers && (!Array.isArray(answers) || answers.length !== total)) {
+    return res.status(400).json({ error: 'Nederīgs atbilžu saraksts.' });
   }
 
   const user = db.findUserByName(name);
@@ -98,12 +108,20 @@ app.post('/api/results', (req, res) => {
   if (!test) return res.status(404).json({ error: 'Tests nav atrasts.' });
   if (!test.enabled) return res.status(403).json({ error: 'Šis tests pašlaik nav pieejams.' });
 
-  db.saveResult({ userId: user.id, testId, score, total });
-  res.json({ ok: true });
+  const resultId = db.saveResult({ userId: user.id, testId, score, total, answers });
+  res.json({ ok: true, resultId });
 });
 
 app.get('/api/results/:testId', (req, res) => {
   res.json(db.getLeaderboard(req.params.testId));
+});
+
+app.get('/api/results/detail/:resultId', (req, res) => {
+  const detail = db.getResultDetail(req.params.resultId);
+  if (!detail) return res.status(404).json({ error: 'Rezultāts nav atrasts.' });
+  const registry = loadTestRegistry();
+  const meta = registry.find((t) => t.id === detail.testId);
+  res.json({ ...detail, testTitle: meta ? meta.title : detail.testId });
 });
 
 // --- Admin API ---
@@ -173,6 +191,10 @@ app.get('/testi/:testId', (req, res) => {
 
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
+});
+
+app.get('/rezultati/:resultId', (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'review.html'));
 });
 
 app.listen(PORT, () => {

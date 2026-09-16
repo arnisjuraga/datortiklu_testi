@@ -24,6 +24,7 @@ const finalScore = document.getElementById('finalScore');
 const verdict = document.getElementById('verdict');
 const verdictDesc = document.getElementById('verdictDesc');
 const retryBtn = document.getElementById('retryBtn');
+const reviewLink = document.getElementById('reviewLink');
 const leaderboardEl = document.getElementById('leaderboard');
 
 let QUESTIONS = [];
@@ -163,7 +164,23 @@ async function showResult() {
 
   if (!submitting) {
     submitting = true;
-    await apiPost('/api/results', { name: playerName, testId, score, total: QUESTIONS.length });
+    const answers = QUESTIONS.map((q, i) => ({
+      q: q.q,
+      opts: q.opts,
+      correct: q.a,
+      selected: selected[i],
+    }));
+    const { ok, data } = await apiPost('/api/results', {
+      name: playerName,
+      testId,
+      score,
+      total: QUESTIONS.length,
+      answers,
+    });
+    if (ok && data.resultId) {
+      reviewLink.href = `/rezultati/${data.resultId}`;
+      reviewLink.hidden = false;
+    }
   }
   loadLeaderboard();
 }
@@ -176,7 +193,8 @@ async function loadLeaderboard() {
     return;
   }
   data.slice(0, 15).forEach((r) => {
-    const row = document.createElement('div');
+    const row = document.createElement('a');
+    row.href = `/rezultati/${r.id}`;
     row.className = 'lb-row' + (r.name === playerName ? ' me' : '');
     row.innerHTML = `
       <span class="lb-name">${r.name}</span>

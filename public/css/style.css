@@ -314,8 +314,12 @@ button.prev:active{transform:scale(0.97);}
   padding:8px 10px;
   border-bottom:1px solid var(--border);
   font-size:0.88rem;
+  text-decoration:none;
+  color:var(--text);
+  transition:background .15s;
 }
 .lb-row:last-child{border-bottom:none;}
+.lb-row:hover{background:rgba(91,155,213,0.08);border-radius:6px;}
 .lb-row .lb-name{font-weight:600;}
 .lb-row.me{background:rgba(91,155,213,0.1);border-radius:6px;}
 .lb-score{font-family:'IBM Plex Mono',monospace;color:var(--muted);}

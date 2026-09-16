@@ -44,6 +44,14 @@ Katrs tests ir pieejams pa savu URL: `/testi/<test-id>` (piem. `/testi/kabeli`).
 
 Katrā testa reizē jautājumu secība tiek sajaukta no jauna.
 
+## Atbilžu apskate
+
+Katram saglabātajam rezultātam tiek atcerēta arī pati atbilžu secība un
+izvēle — pieejama `/rezultati/<id>` (saite parādās gan pēc paša testa
+pabeigšanas, gan rezultātu sarakstā pie testa, gan admin panelī). Tur redzams,
+kāds bija jautājumu klāsts un secība tam konkrētajam mēģinājumam, ko dalībnieks
+izvēlējās un vai tas bija pareizi.
+
 Bez `ADMIN_PASSWORD` iestatīšanas admin panelis ir bloķēts.
 
 ## Lokāla izstrāde
