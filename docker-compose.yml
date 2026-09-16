@@ -4,7 +4,7 @@ services:
     container_name: datortiklu-testi
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     environment:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     volumes:
