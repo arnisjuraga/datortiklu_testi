@@ -28,9 +28,26 @@ Katrs tests ir pieejams pa savu URL: `/testi/<test-id>` (piem. `/testi/kabeli`).
    ```
 3. Viss cits (UI, reģistrācija, rezultāti) darbojas automātiski.
 
+## Admin panelis
+
+`/admin` — aizsargāts ar paroli no vides mainīgā `ADMIN_PASSWORD`. Tur var:
+
+- redzēt visu dalībnieku rezultātus (vārds, tests, datums, rezultāts);
+- katram testam pārslēgt režīmu starp **Mācīšanās** un **Kontroldarbs**:
+  - *Mācīšanās* — pēc katras atbildes uzreiz redzama pareizā atbilde, drīkst
+    mainīt izvēli, kamēr tests nav pabeigts.
+  - *Kontroldarbs* — pareizā atbilde netiek rādīta testa laikā, redzams tikai,
+    ka jautājums ir atbildēts; drīkst brīvi pārvietoties starp jautājumiem un
+    mainīt atbildes, līdz nospiests "Beigt testu".
+
+Katrā testa reizē jautājumu secība tiek sajaukta no jauna.
+
+Bez `ADMIN_PASSWORD` iestatīšanas admin panelis ir bloķēts.
+
 ## Lokāla izstrāde
 
 ```bash
+cp .env.example .env   # iestati savu ADMIN_PASSWORD
 npm install
 npm run dev
 ```
@@ -40,8 +57,9 @@ Serveris uz `http://localhost:3000`.
 ## Palaišana ar Docker
 
 ```bash
+cp .env.example .env   # iestati savu ADMIN_PASSWORD
 docker compose up -d --build
 ```
 
 Dati (SQLite datubāze) tiek glabāti Docker volumē `datortiklu-testi-data`,
-tāpēc paliek pāri pāri konteinera pārbūvēm/pārstartēšanai.
+tāpēc paliek pāri konteinera pārbūvēm/pārstartēšanai.

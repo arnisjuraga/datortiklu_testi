@@ -1,12 +1,15 @@
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
+try { require('dotenv').config(); } catch { /* dotenv optional */ }
 const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const VALID_MODES = ['macisanas', 'kontroldarbs'];
 
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
@@ -22,10 +25,21 @@ function loadTest(testId) {
   if (!meta) return null;
   const raw = fs.readFileSync(path.join(DATA_DIR, meta.file), 'utf8');
   const questions = JSON.parse(raw);
-  return { ...meta, questions };
+  return { ...meta, questions, mode: db.getTestMode(meta.id) };
 }
 
-// --- API ---
+function requireAdmin(req, res, next) {
+  if (!ADMIN_PASSWORD) {
+    return res.status(500).json({ error: 'ADMIN_PASSWORD nav konfigurēts serverī.' });
+  }
+  const supplied = req.header('x-admin-password') || '';
+  if (supplied !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Nepareiza parole.' });
+  }
+  next();
+}
+
+// --- Public API ---
 
 app.get('/api/tests', (req, res) => {
   const registry = loadTestRegistry().map((t) => {
@@ -36,6 +50,7 @@ app.get('/api/tests', (req, res) => {
       title: t.title,
       description: t.description,
       questionCount: questions.length,
+      mode: db.getTestMode(t.id),
     };
   });
   res.json(registry);
@@ -87,12 +102,64 @@ app.get('/api/results/:testId', (req, res) => {
   res.json(db.getLeaderboard(req.params.testId));
 });
 
+// --- Admin API ---
+
+app.post('/api/admin/login', (req, res) => {
+  if (!ADMIN_PASSWORD) {
+    return res.status(500).json({ error: 'ADMIN_PASSWORD nav konfigurēts serverī.' });
+  }
+  const password = req.body?.password || '';
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Nepareiza parole.' });
+  }
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/tests', requireAdmin, (req, res) => {
+  const registry = loadTestRegistry().map((t) => ({
+    id: t.id,
+    title: t.title,
+    mode: db.getTestMode(t.id),
+  }));
+  res.json(registry);
+});
+
+app.post('/api/admin/tests/:testId/mode', requireAdmin, (req, res) => {
+  const { mode } = req.body || {};
+  if (!VALID_MODES.includes(mode)) {
+    return res.status(400).json({ error: 'Nederīgs režīms.' });
+  }
+  const registry = loadTestRegistry();
+  if (!registry.find((t) => t.id === req.params.testId)) {
+    return res.status(404).json({ error: 'Tests nav atrasts.' });
+  }
+  const saved = db.setTestMode(req.params.testId, mode);
+  res.json({ ok: true, mode: saved });
+});
+
+app.get('/api/admin/results', requireAdmin, (req, res) => {
+  const registry = loadTestRegistry();
+  const titleById = Object.fromEntries(registry.map((t) => [t.id, t.title]));
+  const results = db.getAllResults().map((r) => ({
+    ...r,
+    testTitle: titleById[r.testId] || r.testId,
+  }));
+  res.json(results);
+});
+
 // --- Pages (clean routes per test) ---
 
 app.get('/testi/:testId', (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'test.html'));
 });
 
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
+});
+
 app.listen(PORT, () => {
   console.log(`Datortīklu testi darbojas uz porta ${PORT}`);
+  if (!ADMIN_PASSWORD) {
+    console.warn('BRĪDINĀJUMS: ADMIN_PASSWORD nav iestatīts — admin panelis ir bloķēts.');
+  }
 });

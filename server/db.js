@@ -26,6 +26,11 @@ db.exec(`
   );
 
   CREATE INDEX IF NOT EXISTS idx_results_test ON results(test_id);
+
+  CREATE TABLE IF NOT EXISTS test_settings (
+    test_id TEXT PRIMARY KEY,
+    mode TEXT NOT NULL DEFAULT 'macisanas' CHECK (mode IN ('macisanas', 'kontroldarbs'))
+  );
 `);
 
 function normalizeName(name) {
@@ -68,6 +73,30 @@ function getLeaderboard(testId) {
     .all(testId);
 }
 
+function getTestMode(testId) {
+  const row = db.prepare('SELECT mode FROM test_settings WHERE test_id = ?').get(testId);
+  return row ? row.mode : 'macisanas';
+}
+
+function setTestMode(testId, mode) {
+  db.prepare(
+    `INSERT INTO test_settings (test_id, mode) VALUES (?, ?)
+     ON CONFLICT(test_id) DO UPDATE SET mode = excluded.mode`
+  ).run(testId, mode);
+  return getTestMode(testId);
+}
+
+function getAllResults() {
+  return db
+    .prepare(
+      `SELECT u.name AS name, r.test_id AS testId, r.score AS score, r.total AS total, r.created_at AS createdAt
+       FROM results r
+       JOIN users u ON u.id = r.user_id
+       ORDER BY r.created_at DESC`
+    )
+    .all();
+}
+
 module.exports = {
   createUser,
   findUserByName,
@@ -75,4 +104,7 @@ module.exports = {
   saveResult,
   getLeaderboard,
   normalizeName,
+  getTestMode,
+  setTestMode,
+  getAllResults,
 };

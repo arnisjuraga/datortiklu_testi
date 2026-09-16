@@ -20,9 +20,10 @@ async function renderTests() {
     const a = document.createElement('a');
     a.className = 'test-item';
     a.href = `/testi/${t.id}`;
+    const badge = t.mode === 'kontroldarbs' ? '<span class="exam-badge">KONTROLDARBS</span>' : '';
     a.innerHTML = `
       <div>
-        <h3>${t.title}</h3>
+        <h3>${t.title}${badge}</h3>
         <p>${t.description}</p>
       </div>
       <span class="go mono">${t.questionCount} JAUT. →</span>

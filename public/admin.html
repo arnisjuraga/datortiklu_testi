@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Datortīklu testi</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>Administrēšana</h1>
+    <span class="tag mono">Admin</span>
+  </div>
+  <p class="sub">Testu režīmi un visu dalībnieku rezultāti.</p>
+
+  <div id="loginCard" class="card">
+    <form class="name-form" id="loginForm">
+      <div>
+        <label for="pwInput">Admin parole</label>
+        <div class="name-row">
+          <input type="password" id="pwInput" autocomplete="current-password" required>
+          <button class="btn-primary" type="submit" id="loginBtn">Ieiet</button>
+        </div>
+      </div>
+      <div class="err-msg" id="loginErr"></div>
+    </form>
+  </div>
+
+  <div id="adminBody" hidden>
+    <div class="whoami">
+      Admin sesija aktīva
+      <button id="logoutBtn" type="button" style="margin-left:auto;">Iziet</button>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="qmeta" style="margin-bottom:14px;"><span class="mono">TESTU REŽĪMI</span></div>
+      <div id="testModeList" class="test-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="qmeta" style="margin-bottom:14px;"><span class="mono">VISI REZULTĀTI</span></div>
+      <div style="overflow-x:auto;">
+        <table class="admin-table" id="resultsTable">
+          <thead>
+            <tr><th>Vārds</th><th>Tests</th><th>Datums</th><th>Rezultāts</th></tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </div>
+      <p class="empty" id="resultsEmpty" hidden>Vēl nav neviena rezultāta.</p>
+    </div>
+  </div>
+
+  <footer class="note mono">DATORTIKLU_TESTI · ARNISJURAGA</footer>
+</div>
+
+<script src="/js/common.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>

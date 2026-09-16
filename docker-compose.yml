@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    environment:
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     volumes:
       - datortiklu-testi-data:/app/data-store
 
