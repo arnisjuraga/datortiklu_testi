@@ -8,6 +8,8 @@ const nameInput = document.getElementById('nameInput');
 const submitBtn = document.getElementById('submitBtn');
 const errMsg = document.getElementById('errMsg');
 const testList = document.getElementById('testList');
+const myResultsCard = document.getElementById('myResultsCard');
+const myResultsList = document.getElementById('myResultsList');
 
 async function renderTests() {
   const { ok, data } = await apiGet('/api/tests');
@@ -32,6 +34,29 @@ async function renderTests() {
   });
 }
 
+async function renderMyResults(name) {
+  const { ok, data } = await apiGet(`/api/my-results?name=${encodeURIComponent(name)}`);
+  if (!ok || !data.length) {
+    myResultsCard.hidden = true;
+    return;
+  }
+  myResultsCard.hidden = false;
+  myResultsList.innerHTML = '';
+  data.slice(0, 20).forEach((r) => {
+    const date = new Date(r.createdAt.replace(' ', 'T') + 'Z');
+    const dateStr = date.toLocaleString('lv-LV', { dateStyle: 'medium', timeStyle: 'short' });
+    const canOpen = r.reviewEnabled;
+    const row = document.createElement(canOpen ? 'a' : 'div');
+    if (canOpen) row.href = `/rezultati/${r.id}`;
+    row.className = 'lb-row';
+    row.innerHTML = `
+      <span class="lb-name">${r.testTitle} <span class="hint mono" style="font-weight:400;">${dateStr}</span></span>
+      <span class="lb-score mono">${r.score}/${r.total}</span>
+    `;
+    myResultsList.appendChild(row);
+  });
+}
+
 function getNextParam() {
   const params = new URLSearchParams(location.search);
   const next = params.get('next');
@@ -48,11 +73,13 @@ function showLoggedIn(name) {
   whoami.hidden = false;
   whoamiName.textContent = name;
   testsCard.hidden = false;
+  renderMyResults(name);
 }
 
 function showGate() {
   whoami.hidden = true;
   testsCard.hidden = true;
+  myResultsCard.hidden = true;
   gateCard.hidden = false;
   nameInput.value = '';
   nameInput.focus();

@@ -31,13 +31,17 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS test_settings (
     test_id TEXT PRIMARY KEY,
     mode TEXT NOT NULL DEFAULT 'macisanas' CHECK (mode IN ('macisanas', 'kontroldarbs')),
-    enabled INTEGER NOT NULL DEFAULT 1
+    enabled INTEGER NOT NULL DEFAULT 1,
+    review_enabled INTEGER NOT NULL DEFAULT 0
   );
 `);
 
 const testSettingsColumns = db.prepare('PRAGMA table_info(test_settings)').all().map((c) => c.name);
 if (!testSettingsColumns.includes('enabled')) {
   db.exec('ALTER TABLE test_settings ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1');
+}
+if (!testSettingsColumns.includes('review_enabled')) {
+  db.exec('ALTER TABLE test_settings ADD COLUMN review_enabled INTEGER NOT NULL DEFAULT 0');
 }
 
 const resultsColumns = db.prepare('PRAGMA table_info(results)').all().map((c) => c.name);
@@ -97,7 +101,7 @@ function saveResult({ userId, testId, score, total, answers }) {
 function getLeaderboard(testId) {
   return db
     .prepare(
-      `SELECT r.id AS id, u.name AS name, r.score AS score, r.total AS total, r.created_at AS createdAt
+      `SELECT r.id AS id, r.user_id AS userId, u.name AS name, r.score AS score, r.total AS total, r.created_at AS createdAt
        FROM results r
        JOIN users u ON u.id = r.user_id
        WHERE r.test_id = ?
@@ -109,7 +113,7 @@ function getLeaderboard(testId) {
 function getResultDetail(resultId) {
   const row = db
     .prepare(
-      `SELECT r.id AS id, u.name AS name, r.test_id AS testId, r.score AS score, r.total AS total,
+      `SELECT r.id AS id, r.user_id AS userId, u.name AS name, r.test_id AS testId, r.score AS score, r.total AS total,
               r.answers AS answers, r.created_at AS createdAt
        FROM results r
        JOIN users u ON u.id = r.user_id
@@ -118,6 +122,15 @@ function getResultDetail(resultId) {
     .get(resultId);
   if (!row) return null;
   return { ...row, answers: row.answers ? JSON.parse(row.answers) : null };
+}
+
+function getResultsByUser(userId) {
+  return db
+    .prepare(
+      `SELECT id, test_id AS testId, score, total, created_at AS createdAt
+       FROM results WHERE user_id = ? ORDER BY created_at DESC`
+    )
+    .all(userId);
 }
 
 function getTestMode(testId) {
@@ -146,6 +159,19 @@ function setTestEnabled(testId, enabled) {
   return getTestEnabled(testId);
 }
 
+function getReviewEnabled(testId) {
+  const row = db.prepare('SELECT review_enabled FROM test_settings WHERE test_id = ?').get(testId);
+  return row ? !!row.review_enabled : false;
+}
+
+function setReviewEnabled(testId, enabled) {
+  db.prepare(
+    `INSERT INTO test_settings (test_id, review_enabled) VALUES (?, ?)
+     ON CONFLICT(test_id) DO UPDATE SET review_enabled = excluded.review_enabled`
+  ).run(testId, enabled ? 1 : 0);
+  return getReviewEnabled(testId);
+}
+
 function getAllResults() {
   return db
     .prepare(
@@ -167,10 +193,13 @@ module.exports = {
   saveResult,
   getLeaderboard,
   getResultDetail,
+  getResultsByUser,
   normalizeName,
   getTestMode,
   setTestMode,
   getTestEnabled,
   setTestEnabled,
+  getReviewEnabled,
+  setReviewEnabled,
   getAllResults,
 };

@@ -61,10 +61,15 @@ function renderTestModes(tests) {
           <button type="button" class="mode-btn ${t.mode === 'macisanas' ? 'active' : ''}" data-mode="macisanas">Mācīšanās</button>
           <button type="button" class="mode-btn ${t.mode === 'kontroldarbs' ? 'active' : ''}" data-mode="kontroldarbs">Kontroldarbs</button>
         </div>
-        <label class="switch" data-test-id="${t.id}">
+        <label class="switch" data-test-id="${t.id}" data-field="enabled">
           <input type="checkbox" ${t.enabled ? 'checked' : ''}>
           <span class="switch-track"><span class="switch-thumb"></span></span>
           <span class="switch-label mono">${t.enabled ? 'IESLĒGTS' : 'IZSLĒGTS'}</span>
+        </label>
+        <label class="switch" data-test-id="${t.id}" data-field="review">
+          <input type="checkbox" ${t.reviewEnabled ? 'checked' : ''}>
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+          <span class="switch-label mono">ATBILŽU APSKATE: ${t.reviewEnabled ? 'IESLĒGTA' : 'IZSLĒGTA'}</span>
         </label>
       </div>
     `;
@@ -83,7 +88,7 @@ function renderTestModes(tests) {
     });
   });
 
-  testModeList.querySelectorAll('.switch').forEach((label) => {
+  testModeList.querySelectorAll('.switch[data-field="enabled"]').forEach((label) => {
     const checkbox = label.querySelector('input');
     checkbox.addEventListener('change', async () => {
       const testId = label.dataset.testId;
@@ -92,6 +97,20 @@ function renderTestModes(tests) {
       if (ok) {
         label.querySelector('.switch-label').textContent = data.enabled ? 'IESLĒGTS' : 'IZSLĒGTS';
         label.closest('.test-item').classList.toggle('test-item-off', !data.enabled);
+      } else {
+        checkbox.checked = !enabled;
+      }
+    });
+  });
+
+  testModeList.querySelectorAll('.switch[data-field="review"]').forEach((label) => {
+    const checkbox = label.querySelector('input');
+    checkbox.addEventListener('change', async () => {
+      const testId = label.dataset.testId;
+      const enabled = checkbox.checked;
+      const { ok, data } = await adminPost(`/api/admin/tests/${testId}/review`, { enabled });
+      if (ok) {
+        label.querySelector('.switch-label').textContent = `ATBILŽU APSKATE: ${data.reviewEnabled ? 'IESLĒGTA' : 'IZSLĒGTA'}`;
       } else {
         checkbox.checked = !enabled;
       }

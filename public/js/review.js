@@ -69,9 +69,9 @@ function renderQuestionCard(item, index) {
 }
 
 (async function init() {
-  const { ok, data } = await apiGet(`/api/results/detail/${resultId}`);
+  const { ok, data } = await apiGetAuthed(`/api/results/detail/${resultId}`);
   if (!ok) {
-    revBody.innerHTML = `<div class="card"><p class="empty">${data.error || 'Rezultāts nav atrasts.'}</p></div>`;
+    revBody.innerHTML = `<div class="card"><p class="empty">${data.error || 'Šī atbilžu apskate nav pieejama.'}</p></div>`;
     return;
   }
 

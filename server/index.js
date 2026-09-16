@@ -25,7 +25,13 @@ function loadTest(testId) {
   if (!meta) return null;
   const raw = fs.readFileSync(path.join(DATA_DIR, meta.file), 'utf8');
   const questions = JSON.parse(raw);
-  return { ...meta, questions, mode: db.getTestMode(meta.id), enabled: db.getTestEnabled(meta.id) };
+  return {
+    ...meta,
+    questions,
+    mode: db.getTestMode(meta.id),
+    enabled: db.getTestEnabled(meta.id),
+    reviewEnabled: db.getReviewEnabled(meta.id),
+  };
 }
 
 function requireAdmin(req, res, next) {
@@ -53,6 +59,7 @@ app.get('/api/tests', (req, res) => {
         description: t.description,
         questionCount: questions.length,
         mode: db.getTestMode(t.id),
+        reviewEnabled: db.getReviewEnabled(t.id),
       };
     });
   res.json(registry);
@@ -122,9 +129,36 @@ app.get('/api/results/:testId', (req, res) => {
   res.json(db.getLeaderboard(req.params.testId));
 });
 
+app.get('/api/my-results', (req, res) => {
+  const name = (req.query.name || '').trim();
+  if (!name) return res.status(400).json({ error: 'Jānorāda vārds.' });
+
+  const user = db.findUserByName(name);
+  if (!user) return res.status(404).json({ error: 'Šāds vārds nav reģistrēts.' });
+
+  const registry = loadTestRegistry();
+  const titleById = Object.fromEntries(registry.map((t) => [t.id, t.title]));
+  const results = db.getResultsByUser(user.id).map((r) => ({
+    ...r,
+    testTitle: titleById[r.testId] || r.testId,
+    reviewEnabled: db.getReviewEnabled(r.testId),
+  }));
+  res.json(results);
+});
+
 app.get('/api/results/detail/:resultId', (req, res) => {
   const detail = db.getResultDetail(req.params.resultId);
   if (!detail) return res.status(404).json({ error: 'Rezultāts nav atrasts.' });
+
+  const isAdmin = !!ADMIN_PASSWORD && req.header('x-admin-password') === ADMIN_PASSWORD;
+  const requestedName = (req.query.name || '').trim();
+  const isOwner = !!requestedName && db.normalizeName(requestedName) === db.normalizeName(detail.name);
+  const reviewOn = db.getReviewEnabled(detail.testId);
+
+  if (!isAdmin && !(isOwner && reviewOn)) {
+    return res.status(403).json({ error: 'Šī atbilžu apskate nav pieejama.' });
+  }
+
   const registry = loadTestRegistry();
   const meta = registry.find((t) => t.id === detail.testId);
   res.json({ ...detail, testTitle: meta ? meta.title : detail.testId });
@@ -149,6 +183,7 @@ app.get('/api/admin/tests', requireAdmin, (req, res) => {
     title: t.title,
     mode: db.getTestMode(t.id),
     enabled: db.getTestEnabled(t.id),
+    reviewEnabled: db.getReviewEnabled(t.id),
   }));
   res.json(registry);
 });
@@ -177,6 +212,19 @@ app.post('/api/admin/tests/:testId/enabled', requireAdmin, (req, res) => {
   }
   const saved = db.setTestEnabled(req.params.testId, enabled);
   res.json({ ok: true, enabled: saved });
+});
+
+app.post('/api/admin/tests/:testId/review', requireAdmin, (req, res) => {
+  const { enabled } = req.body || {};
+  if (typeof enabled !== 'boolean') {
+    return res.status(400).json({ error: 'Nederīga vērtība.' });
+  }
+  const registry = loadTestRegistry();
+  if (!registry.find((t) => t.id === req.params.testId)) {
+    return res.status(404).json({ error: 'Tests nav atrasts.' });
+  }
+  const saved = db.setReviewEnabled(req.params.testId, enabled);
+  res.json({ ok: true, reviewEnabled: saved });
 });
 
 app.get('/api/admin/users', requireAdmin, (req, res) => {

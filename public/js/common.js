@@ -55,6 +55,29 @@ async function refreshIdentity() {
   return getSavedName();
 }
 
+function getAdminPw() {
+  try {
+    return sessionStorage.getItem('dt_admin_pw') || '';
+  } catch {
+    return '';
+  }
+}
+
+// Fetches a URL identifying the caller by their saved name (query param
+// `name`) and, if present, the admin password header — used by endpoints
+// that gate access to "my own results" or admin-only data.
+async function apiGetAuthed(url) {
+  const u = new URL(url, location.origin);
+  const name = getSavedName();
+  if (name) u.searchParams.set('name', name);
+  const headers = {};
+  const pw = getAdminPw();
+  if (pw) headers['x-admin-password'] = pw;
+  const res = await fetch(u.pathname + u.search, { headers });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
+
 async function apiPost(url, body) {
   const res = await fetch(url, {
     method: 'POST',

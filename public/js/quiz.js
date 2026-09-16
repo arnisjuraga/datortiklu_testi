@@ -30,6 +30,7 @@ const submitErr = document.getElementById('submitErr');
 
 let QUESTIONS = [];
 let mode = 'macisanas';
+let reviewEnabled = false;
 let current = 0;
 let selected = [];
 let submitted = false;
@@ -190,8 +191,10 @@ async function submitResult() {
   if (ok && data.resultId) {
     submitted = true;
     submitErr.hidden = true;
-    reviewLink.href = `/rezultati/${data.resultId}`;
-    reviewLink.hidden = false;
+    if (reviewEnabled) {
+      reviewLink.href = `/rezultati/${data.resultId}`;
+      reviewLink.hidden = false;
+    }
     return;
   }
 
@@ -217,9 +220,11 @@ async function loadLeaderboard() {
     return;
   }
   data.slice(0, 15).forEach((r) => {
-    const row = document.createElement('a');
-    row.href = `/rezultati/${r.id}`;
-    row.className = 'lb-row' + (r.name === playerName ? ' me' : '');
+    const isMine = r.name.trim().toLowerCase() === playerName.trim().toLowerCase();
+    const canOpen = isMine && reviewEnabled;
+    const row = document.createElement(canOpen ? 'a' : 'div');
+    if (canOpen) row.href = `/rezultati/${r.id}`;
+    row.className = 'lb-row' + (isMine ? ' me' : '');
     row.innerHTML = `
       <span class="lb-name">${r.name}</span>
       <span class="lb-score mono">${r.score}/${r.total}</span>
@@ -265,6 +270,7 @@ retryBtn.addEventListener('click', () => resetQuiz(true));
   testTitle.textContent = data.title;
   testTag.textContent = `${data.questions.length} jautājumi`;
   mode = data.mode || 'macisanas';
+  reviewEnabled = !!data.reviewEnabled;
   QUESTIONS = shuffle(data.questions);
   resetQuiz(false);
 })();
