@@ -207,6 +207,11 @@ retryBtn.addEventListener('click', () => resetQuiz(true));
 
   const { ok, data } = await apiGet(`/api/tests/${testId}`);
   if (!ok) {
+    portsEl.hidden = true;
+    document.querySelector('.foot').hidden = true;
+    qNum.textContent = '';
+    qCat.textContent = '';
+    testTag.textContent = '';
     qText.textContent = data.error || 'Tests nav atrasts.';
     return;
   }

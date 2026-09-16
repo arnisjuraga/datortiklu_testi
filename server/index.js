@@ -25,7 +25,7 @@ function loadTest(testId) {
   if (!meta) return null;
   const raw = fs.readFileSync(path.join(DATA_DIR, meta.file), 'utf8');
   const questions = JSON.parse(raw);
-  return { ...meta, questions, mode: db.getTestMode(meta.id) };
+  return { ...meta, questions, mode: db.getTestMode(meta.id), enabled: db.getTestEnabled(meta.id) };
 }
 
 function requireAdmin(req, res, next) {
@@ -42,23 +42,26 @@ function requireAdmin(req, res, next) {
 // --- Public API ---
 
 app.get('/api/tests', (req, res) => {
-  const registry = loadTestRegistry().map((t) => {
-    const raw = fs.readFileSync(path.join(DATA_DIR, t.file), 'utf8');
-    const questions = JSON.parse(raw);
-    return {
-      id: t.id,
-      title: t.title,
-      description: t.description,
-      questionCount: questions.length,
-      mode: db.getTestMode(t.id),
-    };
-  });
+  const registry = loadTestRegistry()
+    .filter((t) => db.getTestEnabled(t.id))
+    .map((t) => {
+      const raw = fs.readFileSync(path.join(DATA_DIR, t.file), 'utf8');
+      const questions = JSON.parse(raw);
+      return {
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        questionCount: questions.length,
+        mode: db.getTestMode(t.id),
+      };
+    });
   res.json(registry);
 });
 
 app.get('/api/tests/:testId', (req, res) => {
   const test = loadTest(req.params.testId);
   if (!test) return res.status(404).json({ error: 'Tests nav atrasts.' });
+  if (!test.enabled) return res.status(403).json({ error: 'Šis tests pašlaik nav pieejams.' });
   res.json(test);
 });
 
@@ -93,6 +96,7 @@ app.post('/api/results', (req, res) => {
 
   const test = loadTest(testId);
   if (!test) return res.status(404).json({ error: 'Tests nav atrasts.' });
+  if (!test.enabled) return res.status(403).json({ error: 'Šis tests pašlaik nav pieejams.' });
 
   db.saveResult({ userId: user.id, testId, score, total });
   res.json({ ok: true });
@@ -120,6 +124,7 @@ app.get('/api/admin/tests', requireAdmin, (req, res) => {
     id: t.id,
     title: t.title,
     mode: db.getTestMode(t.id),
+    enabled: db.getTestEnabled(t.id),
   }));
   res.json(registry);
 });
@@ -135,6 +140,19 @@ app.post('/api/admin/tests/:testId/mode', requireAdmin, (req, res) => {
   }
   const saved = db.setTestMode(req.params.testId, mode);
   res.json({ ok: true, mode: saved });
+});
+
+app.post('/api/admin/tests/:testId/enabled', requireAdmin, (req, res) => {
+  const { enabled } = req.body || {};
+  if (typeof enabled !== 'boolean') {
+    return res.status(400).json({ error: 'Nederīga vērtība.' });
+  }
+  const registry = loadTestRegistry();
+  if (!registry.find((t) => t.id === req.params.testId)) {
+    return res.status(404).json({ error: 'Tests nav atrasts.' });
+  }
+  const saved = db.setTestEnabled(req.params.testId, enabled);
+  res.json({ ok: true, enabled: saved });
 });
 
 app.get('/api/admin/results', requireAdmin, (req, res) => {

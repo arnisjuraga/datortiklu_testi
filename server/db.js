@@ -29,9 +29,15 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS test_settings (
     test_id TEXT PRIMARY KEY,
-    mode TEXT NOT NULL DEFAULT 'macisanas' CHECK (mode IN ('macisanas', 'kontroldarbs'))
+    mode TEXT NOT NULL DEFAULT 'macisanas' CHECK (mode IN ('macisanas', 'kontroldarbs')),
+    enabled INTEGER NOT NULL DEFAULT 1
   );
 `);
+
+const testSettingsColumns = db.prepare('PRAGMA table_info(test_settings)').all().map((c) => c.name);
+if (!testSettingsColumns.includes('enabled')) {
+  db.exec('ALTER TABLE test_settings ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1');
+}
 
 function normalizeName(name) {
   return name.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -86,6 +92,19 @@ function setTestMode(testId, mode) {
   return getTestMode(testId);
 }
 
+function getTestEnabled(testId) {
+  const row = db.prepare('SELECT enabled FROM test_settings WHERE test_id = ?').get(testId);
+  return row ? !!row.enabled : true;
+}
+
+function setTestEnabled(testId, enabled) {
+  db.prepare(
+    `INSERT INTO test_settings (test_id, enabled) VALUES (?, ?)
+     ON CONFLICT(test_id) DO UPDATE SET enabled = excluded.enabled`
+  ).run(testId, enabled ? 1 : 0);
+  return getTestEnabled(testId);
+}
+
 function getAllResults() {
   return db
     .prepare(
@@ -106,5 +125,7 @@ module.exports = {
   normalizeName,
   getTestMode,
   setTestMode,
+  getTestEnabled,
+  setTestEnabled,
   getAllResults,
 };
