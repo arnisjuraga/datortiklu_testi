@@ -1,0 +1,77 @@
+[
+  {
+    "q": "Kādu savienotāju izmanto standarta vara Ethernet kabeļa galā?",
+    "opts": ["RJ11", "RJ45", "BNC", "SC"],
+    "a": 1
+  },
+  {
+    "q": "Ko nozīmē saīsinājums \"UTP\"?",
+    "opts": ["Unshielded Twisted Pair", "Universal Transfer Protocol", "Underground Telecom Path", "Uniform Terminal Port"],
+    "a": 0
+  },
+  {
+    "q": "Ar ko STP kabelis atšķiras no UTP?",
+    "opts": ["STP ir lētāks ražošanā", "STP ir ekranēts pret elektromagnētiskiem traucējumiem", "STP pārraida gaismu, nevis elektrību", "STP nesatur vītus vadu pārus"],
+    "a": 1
+  },
+  {
+    "q": "Kāpēc Ethernet kabeļa iekšējie vadu pāri ir savīti (twisted pair)?",
+    "opts": ["Lai kabelis būtu lokanāks", "Lai samazinātu savstarpējos traucējumus (crosstalk)", "Lai kabelis izturētu lielāku svaru", "Estētisku apsvērumu dēļ"],
+    "a": 1
+  },
+  {
+    "q": "Kāds ir maksimālais ieteicamais garums vienam vara (UTP) Ethernet kabeļa segmentam bez atkārtotāja?",
+    "opts": ["10 metri", "50 metri", "100 metri", "500 metri"],
+    "a": 2
+  },
+  {
+    "q": "Kura kabeļu kategorija tiek uzskatīta par praktisko minimumu stabilam 1 Gbps ātrumam 100 metru attālumā?",
+    "opts": ["Cat3", "Cat5", "Cat5e", "Cat8"],
+    "a": 2
+  },
+  {
+    "q": "Cat6 kabelis spēj atbalstīt 10 Gbps ātrumu, taču ar kādu praktisku ierobežojumu?",
+    "opts": ["Tikai līdz ~37–55 metriem", "Tikai bezvadu savienojumos", "Tikai izmantojot optisko šķiedru", "Nekādu ierobežojumu nav"],
+    "a": 0
+  },
+  {
+    "q": "Kāda ir galvenā atšķirība starp \"straight-through\" un \"crossover\" kabeli?",
+    "opts": ["Crossover kabelim ir cita veida spraudnis", "Crossover kabelim raidīšanas un uztveršanas vadu pāri ir samainīti vietām", "Straight-through kabeli izmanto tikai optikai", "Crossover kabelis vienmēr ir īsāks"],
+    "a": 1
+  },
+  {
+    "q": "Kad tradicionāli izmantoja crossover kabeli?",
+    "opts": ["Lai savienotu divas ierīces (piem., datoru ar datoru) tieši, bez slēdža", "Lai savienotu divus slēdžus caur interneta pakalpojumu sniedzēju", "Lai palielinātu pārraides ātrumu divas reizes", "Optiskā tīkla maģistrāles izbūvei"],
+    "a": 0
+  },
+  {
+    "q": "Kas ir T568A un T568B?",
+    "opts": ["Optiskās šķiedras pārraides standarti", "Divi vadu sakārtojuma standarti RJ45 spraudnī", "Wi-Fi šifrēšanas protokoli", "Divi Cat kabeļu ražotāji"],
+    "a": 1
+  },
+  {
+    "q": "Kāda ir pirmā vadu krāsa (1. pins) T568B sakārtojuma secībā?",
+    "opts": ["Balts-zaļš", "Balts-oranžs", "Tīri zils", "Balts-brūns"],
+    "a": 1
+  },
+  {
+    "q": "Ko nozīmē PoE Ethernet kabeļa kontekstā?",
+    "opts": ["Power over Ethernet — elektrības padevi kopā ar datiem", "Ping over Ethernet — tīkla ātruma testu", "Protocol over Ethernet — jaunu pārraides protokolu", "Point of Entry — tīkla ieejas punktu"],
+    "a": 0
+  },
+  {
+    "q": "Kāpēc optiskā šķiedra ir izturīgāka pret elektromagnētiskiem traucējumiem nekā vara kabelis?",
+    "opts": ["Tā ir biezāka par vara kabeli", "Tā pārraida datus kā gaismas impulsus, nevis elektriskus signālus", "Tā vienmēr ir ekranēta ar metālu", "Tā darbojas ar zemāku spriegumu"],
+    "a": 1
+  },
+  {
+    "q": "Kāda ir galvenā atšķirība starp single-mode un multi-mode optisko šķiedru?",
+    "opts": ["Single-mode paredzēta lielākiem attālumiem, ar šaurāku serdi un lāzera gaismas avotu", "Multi-mode vienmēr ir ātrāka par single-mode", "Single-mode izmanto tikai iekštelpu tīklos", "Atšķirības starp tām praktiski nav"],
+    "a": 0
+  },
+  {
+    "q": "Kurš no šiem NAV izplatīts optiskās šķiedras savienotāja tips?",
+    "opts": ["LC", "SC", "ST", "RJ45"],
+    "a": 3
+  }
+]

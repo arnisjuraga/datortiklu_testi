@@ -1,0 +1,12 @@
+services:
+  datortiklu-testi:
+    build: .
+    container_name: datortiklu-testi
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - datortiklu-testi-data:/app/data-store
+
+volumes:
+  datortiklu-testi-data:

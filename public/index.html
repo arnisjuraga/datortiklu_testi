@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Datortīklu testi</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>Datortīklu testi</h1>
+    <span class="tag mono">Reģistrs</span>
+  </div>
+  <p class="sub">Ievadi vārdu, lai tavi rezultāti tiktu saglabāti un redzami rezultātu sarakstā.</p>
+
+  <div id="whoami" class="whoami" hidden>
+    Ienācis kā <b id="whoamiName"></b>
+    <button id="changeNameBtn" type="button">Mainīt</button>
+  </div>
+
+  <div id="gateCard" class="card">
+    <form class="name-form" id="nameForm">
+      <div>
+        <label for="nameInput">Tavs vārds</label>
+        <div class="name-row">
+          <input type="text" id="nameInput" maxlength="40" autocomplete="off" placeholder="piem., Arnis J." required>
+          <button class="btn-primary" type="submit" id="submitBtn">Sākt</button>
+        </div>
+      </div>
+      <div class="err-msg" id="errMsg"></div>
+      <div class="hint">Vārds jāreģistrē tikai vienreiz — otru reizi to izmantot nevarēs cits dalībnieks.</div>
+    </form>
+  </div>
+
+  <div id="testsCard" class="card" style="margin-top:16px;" hidden>
+    <div class="qmeta" style="margin-bottom:14px;">
+      <span class="mono">PIEEJAMIE TESTI</span>
+    </div>
+    <div class="test-list" id="testList"></div>
+  </div>
+
+  <footer class="note mono">DATORTIKLU_TESTI · ARNISJURAGA</footer>
+</div>
+
+<script src="/js/common.js"></script>
+<script src="/js/home.js"></script>
+</body>
+</html>

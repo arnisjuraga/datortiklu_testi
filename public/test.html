@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tests — Datortīklu testi</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1 id="testTitle">Tests</h1>
+    <span class="tag mono" id="testTag"></span>
+  </div>
+  <div class="whoami">
+    Spēlē <b id="playerName"></b>
+    <a href="/" style="margin-left:auto;" class="hint">← visi testi</a>
+  </div>
+
+  <div class="ports" id="ports"></div>
+
+  <div class="card">
+    <div class="quiz-body" id="quizBody">
+      <div class="qmeta">
+        <span class="mono" id="qNum">JAUTĀJUMS 01</span>
+        <span class="mono" id="qCat"></span>
+      </div>
+      <div class="qtext" id="qText"></div>
+      <div class="opts" id="opts"></div>
+      <div class="foot">
+        <span class="score-readout mono">PUNKTI <b id="scoreLive">0</b>/<span id="scoreTotal">0</span></span>
+        <button class="next" id="nextBtn">TĀLĀK →</button>
+      </div>
+    </div>
+
+    <div class="result" id="result">
+      <div class="mono" style="color:var(--muted);font-size:0.78rem;letter-spacing:0.08em;">DIAGNOSTIKA PABEIGTA</div>
+      <div class="big" id="finalScore">0<span>/0</span></div>
+      <div class="verdict" id="verdict"></div>
+      <div class="desc" id="verdictDesc"></div>
+      <div class="result-actions">
+        <button class="retry mono" id="retryBtn">↺ TESTĒT VĒLREIZ</button>
+        <a class="back-link mono" href="/">VISI TESTI</a>
+      </div>
+
+      <div class="leaderboard">
+        <h3>Rezultāti</h3>
+        <div id="leaderboard"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="note mono">DATORTIKLU_TESTI · ARNISJURAGA</footer>
+</div>
+
+<script src="/js/common.js"></script>
+<script src="/js/quiz.js"></script>
+</body>
+</html>
