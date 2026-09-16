@@ -240,6 +240,11 @@ footer.note{
 .opt.right .tag-letter{border-color:var(--success);color:var(--success);}
 .opt.miss{border-color:var(--error);background:rgba(232,99,107,0.14);}
 .opt.miss .tag-letter{border-color:var(--error);color:var(--error);}
+.opt.correct-hint{border-color:var(--success);background:transparent;}
+.opt.correct-hint .tag-letter{border-color:var(--success);color:var(--success);}
+.opt-hint{margin-left:auto;font-size:0.72rem;letter-spacing:0.03em;flex:none;}
+.opt.right .opt-hint,.opt.correct-hint .opt-hint{color:var(--success);}
+.opt.miss .opt-hint{color:var(--error);}
 .opt:disabled{cursor:default;}
 
 .foot{display:flex;align-items:center;justify-content:space-between;margin-top:22px;gap:12px;}

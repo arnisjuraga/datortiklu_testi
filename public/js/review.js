@@ -4,6 +4,11 @@ const revTitle = document.getElementById('revTitle');
 const revScore = document.getElementById('revScore');
 const revMeta = document.getElementById('revMeta');
 const revBody = document.getElementById('revBody');
+const adminBackLink = document.getElementById('adminBackLink');
+
+try {
+  if (sessionStorage.getItem('dt_admin_pw')) adminBackLink.hidden = false;
+} catch { /* ignore */ }
 
 const letters = ['A', 'B', 'C', 'D'];
 
@@ -35,9 +40,25 @@ function renderQuestionCard(item, index) {
     const div = document.createElement('div');
     div.className = 'opt';
     div.style.cursor = 'default';
-    if (i === item.correct) div.classList.add('right');
-    if (i === item.selected && item.selected !== item.correct) div.classList.add('miss');
-    div.innerHTML = `<span class="tag-letter">${letters[i]}</span><span>${optText}</span>`;
+    const isCorrect = i === item.correct;
+    const isPicked = i === item.selected;
+    let hint = '';
+
+    if (isPicked && isCorrect) {
+      div.classList.add('right');
+      hint = '✓ tava atbilde';
+    } else if (isPicked && !isCorrect) {
+      div.classList.add('miss');
+      hint = '✗ tava atbilde';
+    } else if (isCorrect) {
+      div.classList.add('correct-hint');
+      hint = '✓ pareizā atbilde';
+    }
+
+    div.innerHTML = `
+      <span class="tag-letter">${letters[i]}</span><span>${optText}</span>
+      ${hint ? `<span class="opt-hint mono">${hint}</span>` : ''}
+    `;
     opts.appendChild(div);
   });
 
