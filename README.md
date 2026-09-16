@@ -51,10 +51,24 @@ Katrā testa reizē jautājumu secība tiek sajaukta no jauna.
 ## Atbilžu apskate
 
 Katram saglabātajam rezultātam tiek atcerēta arī pati atbilžu secība un
-izvēle — pieejama `/rezultati/<id>` (saite parādās gan pēc paša testa
-pabeigšanas, gan rezultātu sarakstā pie testa, gan admin panelī). Tur redzams,
-kāds bija jautājumu klāsts un secība tam konkrētajam mēģinājumam, ko dalībnieks
-izvēlējās un vai tas bija pareizi.
+izvēle — pieejama `/rezultati/<id>`. Tur redzams, kāds bija jautājumu klāsts
+un secība tam konkrētajam mēģinājumam, ko dalībnieks izvēlējās un vai tas
+bija pareizi.
+
+Piekļuve tai ir ierobežota:
+
+- **Admins** (ar `x-admin-password`) redz jebkuru rezultātu vienmēr —
+  neatkarīgi no zemāk minētā pārslēga.
+- **Parasts dalībnieks** var redzēt tikai *savus* rezultātus, un tikai tad,
+  ja admins konkrētajam testam admin panelī ir ieslēdzis "Atbilžu apskate".
+  Pēc noklusējuma tā ir izslēgta.
+- Dalībnieka identitāte šeit (kā arī citur sistēmā) balstās uz reģistrēto
+  vārdu, nevis paroli — nākotnē paredzēts pāriet uz katram lietotājam savu
+  paroli.
+
+Kad atbilžu apskate testam ir ieslēgta, sākumlapā pieteiktam dalībniekam
+parādās sadaļa "Mani rezultāti" ar visiem viņa pašu mēģinājumiem un saitēm uz
+to apskati.
 
 Bez `ADMIN_PASSWORD` iestatīšanas admin panelis ir bloķēts.
 
