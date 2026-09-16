@@ -33,6 +33,10 @@ Katrs tests ir pieejams pa savu URL: `/testi/<test-id>` (piem. `/testi/kabeli`).
 `/admin` — aizsargāts ar paroli no vides mainīgā `ADMIN_PASSWORD`. Tur var:
 
 - redzēt visu dalībnieku rezultātus (vārds, tests, datums, rezultāts);
+- pārsaukt jebkuru reģistrēto dalībnieku ("Dalībnieki" sadaļā) — dalībnieka
+  jau atvērtā pārlūka sesija to pieņem automātiski nākamajā lapas ielādē, bez
+  atkārtotas reģistrēšanās (identitāte iekšēji tiek sasaistīta ar lietotāja ID,
+  nevis tikai vārda tekstu);
 - katram testam ieslēgt/izslēgt pieejamību (izslēgts tests pazūd no publiskā
   saraksta un vairs nav uzsākams, kamēr atkal netiek ieslēgts);
 - katram testam pārslēgt režīmu starp **Mācīšanās** un **Kontroldarbs**:

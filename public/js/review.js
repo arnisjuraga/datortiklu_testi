@@ -52,7 +52,7 @@ function renderQuestionCard(item, index) {
       hint = '✗ tava atbilde';
     } else if (isCorrect) {
       div.classList.add('correct-hint');
-      hint = '✓ pareizā atbilde';
+      hint = 'pareizā atbilde';
     }
 
     div.innerHTML = `
