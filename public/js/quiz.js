@@ -26,12 +26,14 @@ const verdictDesc = document.getElementById('verdictDesc');
 const retryBtn = document.getElementById('retryBtn');
 const reviewLink = document.getElementById('reviewLink');
 const leaderboardEl = document.getElementById('leaderboard');
+const submitErr = document.getElementById('submitErr');
 
 let QUESTIONS = [];
 let mode = 'macisanas';
 let current = 0;
 let selected = [];
-let submitting = false;
+let submitted = false;
+let submitInFlight = false;
 
 function shuffle(arr) {
   const a = arr.slice();
@@ -162,27 +164,49 @@ async function showResult() {
   verdict.className = 'verdict ' + cls;
   verdictDesc.textContent = d;
 
-  if (!submitting) {
-    submitting = true;
-    const answers = QUESTIONS.map((q, i) => ({
-      q: q.q,
-      opts: q.opts,
-      correct: q.a,
-      selected: selected[i],
-    }));
-    const { ok, data } = await apiPost('/api/results', {
-      name: playerName,
-      testId,
-      score,
-      total: QUESTIONS.length,
-      answers,
-    });
-    if (ok && data.resultId) {
-      reviewLink.href = `/rezultati/${data.resultId}`;
-      reviewLink.hidden = false;
-    }
-  }
+  await submitResult();
   loadLeaderboard();
+}
+
+async function submitResult() {
+  if (submitted || submitInFlight) return;
+  submitInFlight = true;
+  const score = computeScore();
+  const answers = QUESTIONS.map((q, i) => ({
+    q: q.q,
+    opts: q.opts,
+    correct: q.a,
+    selected: selected[i],
+  }));
+  const { ok, status, data } = await apiPost('/api/results', {
+    name: playerName,
+    testId,
+    score,
+    total: QUESTIONS.length,
+    answers,
+  });
+  submitInFlight = false;
+
+  if (ok && data.resultId) {
+    submitted = true;
+    submitErr.hidden = true;
+    reviewLink.href = `/rezultati/${data.resultId}`;
+    reviewLink.hidden = false;
+    return;
+  }
+
+  submitErr.hidden = false;
+  if (status === 404) {
+    submitErr.innerHTML = `Rezultātu neizdevās saglabāt (${data.error || 'vārds nav reģistrēts'}). <a href="#" id="reRegisterLink">Reģistrējies vēlreiz</a>.`;
+    document.getElementById('reRegisterLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      clearSavedName();
+      location.href = '/?next=' + encodeURIComponent(location.pathname);
+    });
+  } else {
+    submitErr.innerHTML = `Rezultātu neizdevās saglabāt (${data.error || 'servera kļūda'}). <button type="button" id="retrySubmitBtn" class="hint">Mēģināt vēlreiz</button>`;
+    document.getElementById('retrySubmitBtn').addEventListener('click', submitResult);
+  }
 }
 
 async function loadLeaderboard() {
@@ -208,7 +232,10 @@ function resetQuiz(freshOrder) {
   if (freshOrder) QUESTIONS = shuffle(QUESTIONS);
   current = 0;
   selected = new Array(QUESTIONS.length).fill(null);
-  submitting = false;
+  submitted = false;
+  submitInFlight = false;
+  submitErr.hidden = true;
+  reviewLink.hidden = true;
   quizBody.classList.remove('hide');
   resultEl.classList.remove('show');
   buildPorts();
