@@ -41,7 +41,7 @@
   },
   {
     "q": "Kad tradicionāli izmantoja crossover kabeli?",
-    "opts": ["Lai savienotu divas ierīces (piem., datoru ar datoru) tieši, bez slēdža", "Lai savienotu divus slēdžus caur interneta pakalpojumu sniedzēju", "Lai palielinātu pārraides ātrumu divas reizes", "Optiskā tīkla maģistrāles izbūvei"],
+    "opts": ["Lai savienotu divas ierīces (piem., datoru ar datoru) tieši, bez komutatora (switch)", "Lai savienotu divus komutatorus (switch) caur interneta pakalpojumu sniedzēju", "Lai palielinātu pārraides ātrumu divas reizes", "Optiskā tīkla maģistrāles izbūvei"],
     "a": 0
   },
   {
