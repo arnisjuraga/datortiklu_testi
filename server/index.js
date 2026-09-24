@@ -125,10 +125,6 @@ app.post('/api/results', (req, res) => {
   res.json({ ok: true, resultId });
 });
 
-app.get('/api/results/:testId', (req, res) => {
-  res.json(db.getLeaderboard(req.params.testId));
-});
-
 app.get('/api/my-results', (req, res) => {
   const name = (req.query.name || '').trim();
   if (!name) return res.status(400).json({ error: 'Jānorāda vārds.' });

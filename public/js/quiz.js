@@ -166,7 +166,7 @@ async function showResult() {
   verdictDesc.textContent = d;
 
   await submitResult();
-  loadLeaderboard();
+  loadMyResults();
 }
 
 async function submitResult() {
@@ -212,21 +212,22 @@ async function submitResult() {
   }
 }
 
-async function loadLeaderboard() {
-  const { ok, data } = await apiGet(`/api/results/${testId}`);
+async function loadMyResults() {
+  const { ok, data } = await apiGet(`/api/my-results?name=${encodeURIComponent(playerName)}`);
   leaderboardEl.innerHTML = '';
-  if (!ok || !data.length) {
+  const mine = ok ? data.filter((r) => r.testId === testId) : [];
+  if (!mine.length) {
     leaderboardEl.innerHTML = '<p class="empty">Vēl nav rezultātu.</p>';
     return;
   }
-  data.slice(0, 15).forEach((r) => {
-    const isMine = r.name.trim().toLowerCase() === playerName.trim().toLowerCase();
-    const canOpen = isMine && reviewEnabled;
-    const row = document.createElement(canOpen ? 'a' : 'div');
-    if (canOpen) row.href = `/rezultati/${r.id}`;
-    row.className = 'lb-row' + (isMine ? ' me' : '');
+  mine.slice(0, 15).forEach((r) => {
+    const date = new Date(r.createdAt.replace(' ', 'T') + 'Z');
+    const dateStr = date.toLocaleString('lv-LV', { dateStyle: 'medium', timeStyle: 'short' });
+    const row = document.createElement(reviewEnabled ? 'a' : 'div');
+    if (reviewEnabled) row.href = `/rezultati/${r.id}`;
+    row.className = 'lb-row';
     row.innerHTML = `
-      <span class="lb-name">${r.name}</span>
+      <span class="lb-name mono">${dateStr}</span>
       <span class="lb-score mono">${r.score}/${r.total}</span>
     `;
     leaderboardEl.appendChild(row);

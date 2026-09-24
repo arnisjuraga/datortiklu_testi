@@ -1,8 +1,9 @@
 # Datortīklu testi
 
 Vienkārša testēšanas platforma par datortīklu tēmām. Katrs dalībnieks reģistrē
-unikālu vārdu vienreiz, tad kārto testus — rezultāti tiek saglabāti un rādīti
-kopīgā rezultātu sarakstā katram testam.
+unikālu vārdu vienreiz, tad kārto testus — rezultāti tiek saglabāti. Katrs
+dalībnieks redz tikai savus rezultātus; visu dalībnieku rezultāti redzami tikai
+admin panelī.
 
 ## Struktūra
 

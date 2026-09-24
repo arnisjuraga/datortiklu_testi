@@ -98,18 +98,6 @@ function saveResult({ userId, testId, score, total, answers }) {
   return info.lastInsertRowid;
 }
 
-function getLeaderboard(testId) {
-  return db
-    .prepare(
-      `SELECT r.id AS id, r.user_id AS userId, u.name AS name, r.score AS score, r.total AS total, r.created_at AS createdAt
-       FROM results r
-       JOIN users u ON u.id = r.user_id
-       WHERE r.test_id = ?
-       ORDER BY (CAST(r.score AS REAL) / r.total) DESC, r.created_at ASC`
-    )
-    .all(testId);
-}
-
 function getResultDetail(resultId) {
   const row = db
     .prepare(
@@ -191,7 +179,6 @@ module.exports = {
   getAllUsers,
   renameUser,
   saveResult,
-  getLeaderboard,
   getResultDetail,
   getResultsByUser,
   normalizeName,
