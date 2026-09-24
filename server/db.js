@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const Database = require('better-sqlite3');
 
 const DATA_DIR = process.env.DB_DIR || path.join(__dirname, '..', 'data-store');
@@ -12,7 +13,11 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    name_key TEXT NOT NULL UNIQUE,
+    name_key TEXT UNIQUE,
+    first_name TEXT,
+    last_name TEXT,
+    email TEXT UNIQUE,
+    password_hash TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -34,7 +39,39 @@ db.exec(`
     enabled INTEGER NOT NULL DEFAULT 1,
     review_enabled INTEGER NOT NULL DEFAULT 0
   );
+
+  CREATE TABLE IF NOT EXISTS sessions (
+    token_hash TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    expires_at TEXT NOT NULL
+  );
 `);
+
+// Earlier versions identified users by name only (users.name_key NOT NULL).
+// Rebuild the table so it can also hold e-mail/password accounts; the old
+// name-only rows stay as legacy users (their results are kept, no login).
+const usersColumns = db.prepare('PRAGMA table_info(users)').all().map((c) => c.name);
+if (!usersColumns.includes('email')) {
+  db.pragma('foreign_keys = OFF');
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE users_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        name_key TEXT UNIQUE,
+        first_name TEXT,
+        last_name TEXT,
+        email TEXT UNIQUE,
+        password_hash TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO users_new (id, name, name_key, created_at) SELECT id, name, name_key, created_at FROM users;
+      DROP TABLE users;
+      ALTER TABLE users_new RENAME TO users;
+    `);
+  })();
+  db.pragma('foreign_keys = ON');
+}
 
 const testSettingsColumns = db.prepare('PRAGMA table_info(test_settings)').all().map((c) => c.name);
 if (!testSettingsColumns.includes('enabled')) {
@@ -49,24 +86,52 @@ if (!resultsColumns.includes('answers')) {
   db.exec('ALTER TABLE results ADD COLUMN answers TEXT');
 }
 
-function normalizeName(name) {
-  return name.trim().toLowerCase().replace(/\s+/g, ' ');
+function normalizeEmail(email) {
+  return email.trim().toLowerCase();
 }
 
-function createUser(name) {
-  const key = normalizeName(name);
-  const stmt = db.prepare('INSERT INTO users (name, name_key) VALUES (?, ?)');
-  const info = stmt.run(name.trim(), key);
-  return { id: info.lastInsertRowid, name: name.trim() };
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16);
+  const hash = crypto.scryptSync(password, salt, 64);
+  return `scrypt$${salt.toString('hex')}$${hash.toString('hex')}`;
 }
 
-function findUserByName(name) {
-  const key = normalizeName(name);
-  return db.prepare('SELECT * FROM users WHERE name_key = ?').get(key);
+function verifyPassword(password, stored) {
+  if (!stored) return false;
+  const [scheme, saltHex, hashHex] = stored.split('$');
+  if (scheme !== 'scrypt' || !saltHex || !hashHex) return false;
+  const expected = Buffer.from(hashHex, 'hex');
+  const actual = crypto.scryptSync(password, Buffer.from(saltHex, 'hex'), expected.length);
+  return crypto.timingSafeEqual(actual, expected);
 }
 
-function nameExists(name) {
-  return !!findUserByName(name);
+function publicUser(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    email: row.email,
+  };
+}
+
+function createAccount({ firstName, lastName, email, password }) {
+  const name = `${firstName.trim()} ${lastName.trim()}`;
+  const info = db
+    .prepare('INSERT INTO users (name, first_name, last_name, email, password_hash) VALUES (?, ?, ?, ?, ?)')
+    .run(name, firstName.trim(), lastName.trim(), normalizeEmail(email), hashPassword(password));
+  return publicUser(getUserById(info.lastInsertRowid));
+}
+
+function emailExists(email) {
+  return !!db.prepare('SELECT 1 FROM users WHERE email = ?').get(normalizeEmail(email));
+}
+
+function authenticate(email, password) {
+  const row = db.prepare('SELECT * FROM users WHERE email = ?').get(normalizeEmail(email));
+  if (!row || !verifyPassword(password, row.password_hash)) return null;
+  return publicUser(row);
 }
 
 function getUserById(id) {
@@ -74,21 +139,74 @@ function getUserById(id) {
 }
 
 function getAllUsers() {
-  return db.prepare('SELECT id, name, created_at AS createdAt FROM users ORDER BY name COLLATE NOCASE').all();
+  return db
+    .prepare(
+      `SELECT id, name, first_name AS firstName, last_name AS lastName, email, created_at AS createdAt
+       FROM users ORDER BY name COLLATE NOCASE`
+    )
+    .all();
 }
 
-function renameUser(id, newName) {
-  const key = normalizeName(newName);
-  const existing = db.prepare('SELECT id FROM users WHERE name_key = ? AND id != ?').get(key, id);
-  if (existing) {
-    const err = new Error('name_taken');
-    err.code = 'NAME_TAKEN';
-    throw err;
+// Legacy (name-only) users are renamed via `name`; accounts via first/last name.
+function renameUser(id, { name, firstName, lastName }) {
+  const user = getUserById(id);
+  if (!user) return null;
+  if (user.email) {
+    const full = `${firstName.trim()} ${lastName.trim()}`;
+    db.prepare('UPDATE users SET name = ?, first_name = ?, last_name = ? WHERE id = ?')
+      .run(full, firstName.trim(), lastName.trim(), id);
+  } else {
+    const key = name.trim().toLowerCase().replace(/\s+/g, ' ');
+    const existing = db.prepare('SELECT id FROM users WHERE name_key = ? AND id != ?').get(key, id);
+    if (existing) {
+      const err = new Error('name_taken');
+      err.code = 'NAME_TAKEN';
+      throw err;
+    }
+    db.prepare('UPDATE users SET name = ?, name_key = ? WHERE id = ?').run(name.trim(), key, id);
   }
-  const info = db.prepare('UPDATE users SET name = ?, name_key = ? WHERE id = ?').run(newName.trim(), key, id);
-  if (info.changes === 0) return null;
-  return getUserById(id);
+  return publicUser(getUserById(id));
 }
+
+function setPassword(id, password) {
+  const info = db
+    .prepare('UPDATE users SET password_hash = ? WHERE id = ? AND email IS NOT NULL')
+    .run(hashPassword(password), id);
+  if (info.changes) db.prepare('DELETE FROM sessions WHERE user_id = ?').run(id);
+  return info.changes > 0;
+}
+
+// --- Sessions: the cookie holds a random token; only its hash is stored. ---
+
+const SESSION_DAYS = 30;
+
+function sha256(value) {
+  return crypto.createHash('sha256').update(value).digest('hex');
+}
+
+function createSession(userId) {
+  const token = crypto.randomBytes(32).toString('hex');
+  db.prepare(`INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, datetime('now', ?))`)
+    .run(sha256(token), userId, `+${SESSION_DAYS} days`);
+  return { token, maxAgeMs: SESSION_DAYS * 24 * 60 * 60 * 1000 };
+}
+
+function getSessionUser(token) {
+  if (!token) return null;
+  const row = db
+    .prepare(
+      `SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id
+       WHERE s.token_hash = ? AND s.expires_at > datetime('now')`
+    )
+    .get(sha256(token));
+  return publicUser(row);
+}
+
+function deleteSession(token) {
+  if (token) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(sha256(token));
+}
+
+db.prepare(`DELETE FROM sessions WHERE expires_at <= datetime('now')`).run();
 
 function saveResult({ userId, testId, score, total, answers }) {
   const stmt = db.prepare(
@@ -172,16 +290,18 @@ function getAllResults() {
 }
 
 module.exports = {
-  createUser,
-  findUserByName,
-  nameExists,
-  getUserById,
+  createAccount,
+  emailExists,
+  authenticate,
   getAllUsers,
   renameUser,
+  setPassword,
+  createSession,
+  getSessionUser,
+  deleteSession,
   saveResult,
   getResultDetail,
   getResultsByUser,
-  normalizeName,
   getTestMode,
   setTestMode,
   getTestEnabled,

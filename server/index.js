@@ -34,6 +34,81 @@ function loadTest(testId) {
   };
 }
 
+// --- User sessions (httpOnly cookie) ---
+
+const SESSION_COOKIE = 'dt_session';
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD = 8;
+
+function readCookie(req, name) {
+  const header = req.headers.cookie || '';
+  for (const part of header.split(';')) {
+    const idx = part.indexOf('=');
+    if (idx > -1 && part.slice(0, idx).trim() === name) {
+      return decodeURIComponent(part.slice(idx + 1).trim());
+    }
+  }
+  return '';
+}
+
+function currentUser(req) {
+  return db.getSessionUser(readCookie(req, SESSION_COOKIE));
+}
+
+function startSession(req, res, userId) {
+  const { token, maxAgeMs } = db.createSession(userId);
+  res.cookie(SESSION_COOKIE, token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: req.secure,
+    maxAge: maxAgeMs,
+    path: '/',
+  });
+}
+
+function requireUser(req, res, next) {
+  const user = currentUser(req);
+  if (!user) return res.status(401).json({ error: 'Jāpieslēdzas.' });
+  req.user = user;
+  next();
+}
+
+// Simple in-memory brute-force brake for login: max 10 failures per
+// IP+e-mail in 15 minutes.
+const loginFailures = new Map();
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_FAILURES = 10;
+
+function loginBlocked(key) {
+  const entry = loginFailures.get(key);
+  if (!entry || Date.now() - entry.first > LOGIN_WINDOW_MS) return false;
+  return entry.count >= LOGIN_MAX_FAILURES;
+}
+
+function recordLoginFailure(key) {
+  const entry = loginFailures.get(key);
+  if (!entry || Date.now() - entry.first > LOGIN_WINDOW_MS) {
+    loginFailures.set(key, { first: Date.now(), count: 1 });
+  } else {
+    entry.count++;
+  }
+}
+
+function validatePassword(password) {
+  if (typeof password !== 'string' || password.length < MIN_PASSWORD) {
+    return `Parolei jābūt vismaz ${MIN_PASSWORD} simbolus garai.`;
+  }
+  if (password.length > 200) return 'Parole ir pārāk gara.';
+  return null;
+}
+
+function validatePersonName(value, label) {
+  const v = (value || '').trim();
+  if (!v) return `Jāievada ${label}.`;
+  if (v.length > 40) return `${label[0].toUpperCase() + label.slice(1)} ir pārāk garš.`;
+  return null;
+}
+
 function requireAdmin(req, res, next) {
   if (!ADMIN_PASSWORD) {
     return res.status(500).json({ error: 'ADMIN_PASSWORD nav konfigurēts serverī.' });
@@ -72,69 +147,82 @@ app.get('/api/tests/:testId', (req, res) => {
   res.json(test);
 });
 
-app.post('/api/register', (req, res) => {
-  const name = (req.body?.name || '').trim();
-  if (!name) return res.status(400).json({ error: 'Jāievada vārds.' });
-  if (name.length > 40) return res.status(400).json({ error: 'Vārds ir pārāk garš.' });
+app.post('/api/auth/register', (req, res) => {
+  const { firstName, lastName, email, password } = req.body || {};
+  const err =
+    validatePersonName(firstName, 'vārds') ||
+    validatePersonName(lastName, 'uzvārds') ||
+    (!EMAIL_RE.test((email || '').trim()) || email.length > 120 ? 'Nederīga e-pasta adrese.' : null) ||
+    validatePassword(password);
+  if (err) return res.status(400).json({ error: err });
 
-  if (db.nameExists(name)) {
-    return res.status(409).json({ error: `Vārds "${name}" jau ir aizņemts. Izvēlies citu.` });
+  if (db.emailExists(email)) {
+    return res.status(409).json({ error: 'Ar šo e-pastu jau ir reģistrēts konts. Pieslēdzies.' });
   }
 
   try {
-    const user = db.createUser(name);
-    res.json({ ok: true, id: user.id, name: user.name });
-  } catch (err) {
-    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-      return res.status(409).json({ error: `Vārds "${name}" jau ir aizņemts. Izvēlies citu.` });
+    const user = db.createAccount({ firstName, lastName, email, password });
+    startSession(req, res, user.id);
+    res.json({ ok: true, user });
+  } catch (e) {
+    if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.status(409).json({ error: 'Ar šo e-pastu jau ir reģistrēts konts. Pieslēdzies.' });
     }
-    throw err;
+    throw e;
   }
 });
 
-app.post('/api/check-name', (req, res) => {
-  const name = (req.body?.name || '').trim();
-  res.json({ exists: name ? db.nameExists(name) : false });
+app.post('/api/auth/login', (req, res) => {
+  const email = (req.body?.email || '').trim();
+  const password = req.body?.password || '';
+  if (!email || !password) return res.status(400).json({ error: 'Jāievada e-pasts un parole.' });
+
+  const key = `${req.ip}|${email.toLowerCase()}`;
+  if (loginBlocked(key)) {
+    return res.status(429).json({ error: 'Pārāk daudz neveiksmīgu mēģinājumu. Pamēģini vēlāk.' });
+  }
+
+  const user = db.authenticate(email, password);
+  if (!user) {
+    recordLoginFailure(key);
+    return res.status(401).json({ error: 'Nepareizs e-pasts vai parole.' });
+  }
+  loginFailures.delete(key);
+  startSession(req, res, user.id);
+  res.json({ ok: true, user });
 });
 
-app.get('/api/me/:userId', (req, res) => {
-  const user = db.getUserById(req.params.userId);
-  if (!user) return res.status(404).json({ error: 'Lietotājs nav atrasts.' });
-  res.json({ id: user.id, name: user.name });
+app.post('/api/auth/logout', (req, res) => {
+  db.deleteSession(readCookie(req, SESSION_COOKIE));
+  res.clearCookie(SESSION_COOKIE, { path: '/' });
+  res.json({ ok: true });
 });
 
-app.post('/api/results', (req, res) => {
-  const { name, testId, score, total, answers } = req.body || {};
-  if (!name || !testId || typeof score !== 'number' || typeof total !== 'number') {
+app.get('/api/auth/me', requireUser, (req, res) => {
+  res.json(req.user);
+});
+
+app.post('/api/results', requireUser, (req, res) => {
+  const { testId, score, total, answers } = req.body || {};
+  if (!testId || typeof score !== 'number' || typeof total !== 'number') {
     return res.status(400).json({ error: 'Nepilnīgi dati.' });
   }
   if (answers && (!Array.isArray(answers) || answers.length !== total)) {
     return res.status(400).json({ error: 'Nederīgs atbilžu saraksts.' });
   }
 
-  const user = db.findUserByName(name);
-  if (!user) {
-    return res.status(404).json({ error: 'Šāds vārds nav reģistrēts. Reģistrējies vēlreiz.' });
-  }
-
   const test = loadTest(testId);
   if (!test) return res.status(404).json({ error: 'Tests nav atrasts.' });
   if (!test.enabled) return res.status(403).json({ error: 'Šis tests pašlaik nav pieejams.' });
 
-  const resultId = db.saveResult({ userId: user.id, testId, score, total, answers });
+  const resultId = db.saveResult({ userId: req.user.id, testId, score, total, answers });
   res.json({ ok: true, resultId });
 });
 
-app.get('/api/my-results', (req, res) => {
-  const name = (req.query.name || '').trim();
-  if (!name) return res.status(400).json({ error: 'Jānorāda vārds.' });
-
-  const user = db.findUserByName(name);
-  if (!user) return res.status(404).json({ error: 'Šāds vārds nav reģistrēts.' });
-
+app.get('/api/my-results', requireUser, (req, res) => {
   const registry = loadTestRegistry();
   const titleById = Object.fromEntries(registry.map((t) => [t.id, t.title]));
-  const results = db.getResultsByUser(user.id).map((r) => ({
+  const results = db.getResultsByUser(req.user.id).map((r) => ({
     ...r,
     testTitle: titleById[r.testId] || r.testId,
     reviewEnabled: db.getReviewEnabled(r.testId),
@@ -147,8 +235,8 @@ app.get('/api/results/detail/:resultId', (req, res) => {
   if (!detail) return res.status(404).json({ error: 'Rezultāts nav atrasts.' });
 
   const isAdmin = !!ADMIN_PASSWORD && req.header('x-admin-password') === ADMIN_PASSWORD;
-  const requestedName = (req.query.name || '').trim();
-  const isOwner = !!requestedName && db.normalizeName(requestedName) === db.normalizeName(detail.name);
+  const user = currentUser(req);
+  const isOwner = !!user && user.id === detail.userId;
   const reviewOn = db.getReviewEnabled(detail.testId);
 
   if (!isAdmin && !(isOwner && reviewOn)) {
@@ -228,22 +316,34 @@ app.get('/api/admin/users', requireAdmin, (req, res) => {
 });
 
 app.post('/api/admin/users/:userId/rename', requireAdmin, (req, res) => {
-  const newName = (req.body?.name || '').trim();
-  if (!newName) return res.status(400).json({ error: 'Jāievada vārds.' });
-  if (newName.length > 40) return res.status(400).json({ error: 'Vārds ir pārāk garš.' });
-
-  const user = db.getUserById(req.params.userId);
+  const { name, firstName, lastName } = req.body || {};
+  const user = db.getAllUsers().find((u) => String(u.id) === req.params.userId);
   if (!user) return res.status(404).json({ error: 'Lietotājs nav atrasts.' });
 
+  const err = user.email
+    ? validatePersonName(firstName, 'vārds') || validatePersonName(lastName, 'uzvārds')
+    : validatePersonName(name, 'vārds');
+  if (err) return res.status(400).json({ error: err });
+
   try {
-    const updated = db.renameUser(req.params.userId, newName);
-    res.json({ ok: true, id: updated.id, name: updated.name });
-  } catch (err) {
-    if (err.code === 'NAME_TAKEN' || err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-      return res.status(409).json({ error: `Vārds "${newName}" jau ir aizņemts.` });
+    const updated = db.renameUser(user.id, { name, firstName, lastName });
+    res.json({ ok: true, user: updated });
+  } catch (e) {
+    if (e.code === 'NAME_TAKEN' || e.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return res.status(409).json({ error: `Vārds "${(name || '').trim()}" jau ir aizņemts.` });
     }
-    throw err;
+    throw e;
   }
+});
+
+app.post('/api/admin/users/:userId/password', requireAdmin, (req, res) => {
+  const password = req.body?.password;
+  const err = validatePassword(password);
+  if (err) return res.status(400).json({ error: err });
+  if (!db.setPassword(req.params.userId, password)) {
+    return res.status(404).json({ error: 'Kontam nav e-pasta (vecais lietotājs) vai tas nav atrasts.' });
+  }
+  res.json({ ok: true });
 });
 
 app.get('/api/admin/results', requireAdmin, (req, res) => {

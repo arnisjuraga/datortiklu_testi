@@ -68,7 +68,7 @@ a{color:inherit;}
   color:var(--muted);
 }
 .name-row{display:flex;gap:10px;}
-input[type="text"], input[type="password"]{
+input[type="text"], input[type="password"], input[type="email"]{
   flex:1;
   background:var(--panel2);
   border:1px solid var(--border);
@@ -78,7 +78,7 @@ input[type="text"], input[type="password"]{
   font-family:'Karla',sans-serif;
   font-size:1rem;
 }
-input[type="text"]:focus, input[type="password"]:focus{outline:none;border-color:var(--blue);}
+input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus{outline:none;border-color:var(--blue);}
 button{font-family:'IBM Plex Mono',monospace;cursor:pointer;}
 .btn-primary{
   background:var(--accent);
@@ -399,3 +399,20 @@ button.prev:active{transform:scale(0.97);}
   margin-left:8px;
   letter-spacing:0.04em;
 }
+
+/* Login / registration */
+.auth-tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--border);}
+.auth-tab{
+  background:transparent;
+  border:none;
+  border-bottom:2px solid transparent;
+  color:var(--muted);
+  padding:8px 12px;
+  margin-bottom:-1px;
+  font-size:0.85rem;
+}
+.auth-tab.active{color:var(--text);border-bottom-color:var(--accent);}
+.field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;}
+.field-row{display:flex;gap:10px;flex-wrap:wrap;}
+.field-row .field{min-width:160px;}
+.btn-block{height:44px;width:100%;}

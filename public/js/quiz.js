@@ -1,10 +1,5 @@
 const testId = location.pathname.split('/').filter(Boolean)[1];
 
-let playerName = getSavedName();
-if (!playerName) {
-  location.href = '/?next=' + encodeURIComponent(location.pathname);
-}
-
 const testTitle = document.getElementById('testTitle');
 const testTag = document.getElementById('testTag');
 const playerNameEl = document.getElementById('playerName');
@@ -180,7 +175,6 @@ async function submitResult() {
     selected: selected[i],
   }));
   const { ok, status, data } = await apiPost('/api/results', {
-    name: playerName,
     testId,
     score,
     total: QUESTIONS.length,
@@ -199,13 +193,11 @@ async function submitResult() {
   }
 
   submitErr.hidden = false;
-  if (status === 404) {
-    submitErr.innerHTML = `Rezultātu neizdevās saglabāt (${data.error || 'vārds nav reģistrēts'}). <a href="#" id="reRegisterLink">Reģistrējies vēlreiz</a>.`;
-    document.getElementById('reRegisterLink').addEventListener('click', (e) => {
-      e.preventDefault();
-      clearSavedName();
-      location.href = '/?next=' + encodeURIComponent(location.pathname);
-    });
+  if (status === 401) {
+    // Session expired mid-test: log in in a new tab, then retry here so the
+    // answers on this page aren't lost.
+    submitErr.innerHTML = 'Rezultātu neizdevās saglabāt — sesija beigusies. <a href="/" target="_blank">Pieslēdzies jaunā cilnē</a>, tad <button type="button" id="retrySubmitBtn" class="hint">mēģini vēlreiz</button>.';
+    document.getElementById('retrySubmitBtn').addEventListener('click', submitResult);
   } else {
     submitErr.innerHTML = `Rezultātu neizdevās saglabāt (${data.error || 'servera kļūda'}). <button type="button" id="retrySubmitBtn" class="hint">Mēģināt vēlreiz</button>`;
     document.getElementById('retrySubmitBtn').addEventListener('click', submitResult);
@@ -213,7 +205,7 @@ async function submitResult() {
 }
 
 async function loadMyResults() {
-  const { ok, data } = await apiGet(`/api/my-results?name=${encodeURIComponent(playerName)}`);
+  const { ok, data } = await apiGet('/api/my-results');
   leaderboardEl.innerHTML = '';
   const mine = ok ? data.filter((r) => r.testId === testId) : [];
   if (!mine.length) {
@@ -253,9 +245,12 @@ nextBtn.addEventListener('click', goNext);
 retryBtn.addEventListener('click', () => resetQuiz(true));
 
 (async function init() {
-  if (!playerName) return;
-  playerName = await refreshIdentity();
-  playerNameEl.textContent = playerName;
+  const me = await getMe();
+  if (!me) {
+    goToLogin();
+    return;
+  }
+  playerNameEl.textContent = me.name;
 
   const { ok, data } = await apiGet(`/api/tests/${testId}`);
   if (!ok) {

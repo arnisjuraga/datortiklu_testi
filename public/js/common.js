@@ -1,58 +1,20 @@
-const NAME_KEY = 'dt_username';
-const USERID_KEY = 'dt_userid';
-
-function getSavedName() {
-  try {
-    return localStorage.getItem(NAME_KEY) || '';
-  } catch {
-    return '';
-  }
+// The user identity lives in an httpOnly session cookie set by the server;
+// the browser just asks who it is. Old builds kept a name in localStorage —
+// drop it so it can't be mistaken for a login.
+try {
+  localStorage.removeItem('dt_username');
+  localStorage.removeItem('dt_userid');
+} catch {
+  /* ignore */
 }
 
-function getSavedUserId() {
-  try {
-    return localStorage.getItem(USERID_KEY) || '';
-  } catch {
-    return '';
-  }
+async function getMe() {
+  const { ok, data } = await apiGet('/api/auth/me');
+  return ok ? data : null;
 }
 
-function saveIdentity(id, name) {
-  try {
-    localStorage.setItem(NAME_KEY, name);
-    if (id) localStorage.setItem(USERID_KEY, String(id));
-  } catch {
-    /* private mode / storage blocked — carry on session-only */
-  }
-}
-
-function saveName(name) {
-  try {
-    localStorage.setItem(NAME_KEY, name);
-  } catch {
-    /* private mode / storage blocked — carry on session-only */
-  }
-}
-
-function clearSavedName() {
-  try {
-    localStorage.removeItem(NAME_KEY);
-    localStorage.removeItem(USERID_KEY);
-  } catch {
-    /* ignore */
-  }
-}
-
-// If an admin renamed this browser's user server-side, pick up the new
-// name transparently (no re-registration needed) using the stored user id.
-async function refreshIdentity() {
-  const id = getSavedUserId();
-  if (!id) return getSavedName();
-  const { ok, data } = await apiGet(`/api/me/${id}`);
-  if (ok && data.name && data.name !== getSavedName()) {
-    saveIdentity(data.id, data.name);
-  }
-  return getSavedName();
+function goToLogin() {
+  location.href = '/?next=' + encodeURIComponent(location.pathname);
 }
 
 function getAdminPw() {
@@ -63,17 +25,13 @@ function getAdminPw() {
   }
 }
 
-// Fetches a URL identifying the caller by their saved name (query param
-// `name`) and, if present, the admin password header — used by endpoints
-// that gate access to "my own results" or admin-only data.
+// Fetches a URL with the admin password header when an admin session is
+// active (the user session cookie is sent automatically).
 async function apiGetAuthed(url) {
-  const u = new URL(url, location.origin);
-  const name = getSavedName();
-  if (name) u.searchParams.set('name', name);
   const headers = {};
   const pw = getAdminPw();
   if (pw) headers['x-admin-password'] = pw;
-  const res = await fetch(u.pathname + u.search, { headers });
+  const res = await fetch(url, { headers });
   const data = await res.json().catch(() => ({}));
   return { ok: res.ok, status: res.status, data };
 }

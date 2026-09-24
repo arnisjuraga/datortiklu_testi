@@ -1,7 +1,8 @@
 # Datortīklu testi
 
-Vienkārša testēšanas platforma par datortīklu tēmām. Katrs dalībnieks reģistrē
-unikālu vārdu vienreiz, tad kārto testus — rezultāti tiek saglabāti. Katrs
+Vienkārša testēšanas platforma par datortīklu tēmām. Katrs dalībnieks izveido
+kontu (vārds, uzvārds, e-pasts, parole), tad kārto testus — rezultāti tiek
+saglabāti. Katrs
 dalībnieks redz tikai savus rezultātus; visu dalībnieku rezultāti redzami tikai
 admin panelī.
 
@@ -29,15 +30,29 @@ Katrs tests ir pieejams pa savu URL: `/testi/<test-id>` (piem. `/testi/kabeli`).
    ```
 3. Viss cits (UI, reģistrācija, rezultāti) darbojas automātiski.
 
+## Konti un pieslēgšanās
+
+- Reģistrācijā jānorāda vārds, uzvārds, e-pasts (tas ir arī lietotājvārds) un
+  parole (vismaz 8 simboli, jāievada divreiz). E-pastam jābūt unikālam; vārds
+  un uzvārds drīkst sakrist citiem dalībniekiem.
+- Paroles glabājas tikai kā `scrypt` jaucējvērtība ar sāli.
+- Pēc pieslēgšanās serveris iestata `httpOnly` sīkdatni `dt_session` (derīga
+  30 dienas); datubāzē glabājas tikai tās SHA-256 jaucējvērtība.
+- Pēc 10 neveiksmīgiem pieslēgšanās mēģinājumiem 15 minūšu laikā konkrētajam
+  e-pastam no tās pašas IP pieslēgšanās uz laiku tiek bloķēta.
+- Paroles atjaunošana pa e-pastu nav — aizmirstas paroles gadījumā admins
+  iestata jaunu paroli admin panelī (tas izbeidz visas dalībnieka sesijas).
+- Lietotāji no agrākās versijas (tikai vārds, bez e-pasta) paliek datubāzē kā
+  "vecie lietotāji": viņu rezultāti saglabājas un redzami adminam, bet ar tiem
+  pieslēgties nevar.
+
 ## Admin panelis
 
 `/admin` — aizsargāts ar paroli no vides mainīgā `ADMIN_PASSWORD`. Tur var:
 
 - redzēt visu dalībnieku rezultātus (vārds, tests, datums, rezultāts);
-- pārsaukt jebkuru reģistrēto dalībnieku ("Dalībnieki" sadaļā) — dalībnieka
-  jau atvērtā pārlūka sesija to pieņem automātiski nākamajā lapas ielādē, bez
-  atkārtotas reģistrēšanās (identitāte iekšēji tiek sasaistīta ar lietotāja ID,
-  nevis tikai vārda tekstu);
+- labot dalībnieka vārdu un uzvārdu un iestatīt jaunu paroli ("Dalībnieki"
+  sadaļā);
 - katram testam ieslēgt/izslēgt pieejamību (izslēgts tests pazūd no publiskā
   saraksta un vairs nav uzsākams, kamēr atkal netiek ieslēgts);
 - katram testam pārslēgt režīmu starp **Mācīšanās** un **Kontroldarbs**:
@@ -60,12 +75,9 @@ Piekļuve tai ir ierobežota:
 
 - **Admins** (ar `x-admin-password`) redz jebkuru rezultātu vienmēr —
   neatkarīgi no zemāk minētā pārslēga.
-- **Parasts dalībnieks** var redzēt tikai *savus* rezultātus, un tikai tad,
-  ja admins konkrētajam testam admin panelī ir ieslēdzis "Atbilžu apskate".
-  Pēc noklusējuma tā ir izslēgta.
-- Dalībnieka identitāte šeit (kā arī citur sistēmā) balstās uz reģistrēto
-  vārdu, nevis paroli — nākotnē paredzēts pāriet uz katram lietotājam savu
-  paroli.
+- **Pieslēdzies dalībnieks** var redzēt tikai *savus* rezultātus, un tikai
+  tad, ja admins konkrētajam testam admin panelī ir ieslēdzis "Atbilžu
+  apskate". Pēc noklusējuma tā ir izslēgta.
 
 Kad atbilžu apskate testam ir ieslēgta, sākumlapā pieteiktam dalībniekam
 parādās sadaļa "Mani rezultāti" ar visiem viņa pašu mēģinājumiem un saitēm uz

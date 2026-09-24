@@ -2,11 +2,13 @@ const gateCard = document.getElementById('gateCard');
 const testsCard = document.getElementById('testsCard');
 const whoami = document.getElementById('whoami');
 const whoamiName = document.getElementById('whoamiName');
-const changeNameBtn = document.getElementById('changeNameBtn');
-const nameForm = document.getElementById('nameForm');
-const nameInput = document.getElementById('nameInput');
-const submitBtn = document.getElementById('submitBtn');
-const errMsg = document.getElementById('errMsg');
+const logoutBtn = document.getElementById('logoutBtn');
+const loginForm = document.getElementById('loginForm');
+const loginErr = document.getElementById('loginErr');
+const loginBtn = document.getElementById('loginBtn');
+const registerForm = document.getElementById('registerForm');
+const registerErr = document.getElementById('registerErr');
+const registerBtn = document.getElementById('registerBtn');
 const testList = document.getElementById('testList');
 const myResultsCard = document.getElementById('myResultsCard');
 const myResultsList = document.getElementById('myResultsList');
@@ -34,8 +36,8 @@ async function renderTests() {
   });
 }
 
-async function renderMyResults(name) {
-  const { ok, data } = await apiGet(`/api/my-results?name=${encodeURIComponent(name)}`);
+async function renderMyResults() {
+  const { ok, data } = await apiGet('/api/my-results');
   if (!ok || !data.length) {
     myResultsCard.hidden = true;
     return;
@@ -63,7 +65,7 @@ function getNextParam() {
   return next && next.startsWith('/') ? next : null;
 }
 
-function showLoggedIn(name) {
+function showLoggedIn(user) {
   const next = getNextParam();
   if (next) {
     location.href = next;
@@ -71,9 +73,19 @@ function showLoggedIn(name) {
   }
   gateCard.hidden = true;
   whoami.hidden = false;
-  whoamiName.textContent = name;
+  whoamiName.textContent = user.name;
   testsCard.hidden = false;
-  renderMyResults(name);
+  renderTests();
+  renderMyResults();
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+  loginForm.hidden = tab !== 'login';
+  registerForm.hidden = tab !== 'register';
+  loginErr.textContent = '';
+  registerErr.textContent = '';
+  (tab === 'login' ? loginForm : registerForm).querySelector('input').focus();
 }
 
 function showGate() {
@@ -81,40 +93,63 @@ function showGate() {
   testsCard.hidden = true;
   myResultsCard.hidden = true;
   gateCard.hidden = false;
-  nameInput.value = '';
-  nameInput.focus();
+  showTab('login');
 }
 
-changeNameBtn.addEventListener('click', () => {
-  clearSavedName();
+document.querySelectorAll('.auth-tab').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+logoutBtn.addEventListener('click', async () => {
+  await apiPost('/api/auth/logout', {});
+  loginForm.reset();
+  registerForm.reset();
   showGate();
 });
 
-nameForm.addEventListener('submit', async (e) => {
+loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const name = nameInput.value.trim();
-  errMsg.textContent = '';
-  if (!name) return;
-
-  submitBtn.disabled = true;
-  const { ok, data } = await apiPost('/api/register', { name });
-  submitBtn.disabled = false;
-
+  loginErr.textContent = '';
+  loginBtn.disabled = true;
+  const { ok, data } = await apiPost('/api/auth/login', {
+    email: document.getElementById('loginEmail').value,
+    password: document.getElementById('loginPassword').value,
+  });
+  loginBtn.disabled = false;
   if (!ok) {
-    errMsg.textContent = data.error || 'Kļūda reģistrējot vārdu.';
+    loginErr.textContent = data.error || 'Neizdevās pieslēgties.';
     return;
   }
+  loginForm.reset();
+  showLoggedIn(data.user);
+});
 
-  saveIdentity(data.id, data.name);
-  showLoggedIn(data.name);
+registerForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  registerErr.textContent = '';
+  const password = document.getElementById('regPassword').value;
+  if (password !== document.getElementById('regPassword2').value) {
+    registerErr.textContent = 'Paroles nesakrīt.';
+    return;
+  }
+  registerBtn.disabled = true;
+  const { ok, data } = await apiPost('/api/auth/register', {
+    firstName: document.getElementById('regFirstName').value,
+    lastName: document.getElementById('regLastName').value,
+    email: document.getElementById('regEmail').value,
+    password,
+  });
+  registerBtn.disabled = false;
+  if (!ok) {
+    registerErr.textContent = data.error || 'Kļūda reģistrējoties.';
+    return;
+  }
+  registerForm.reset();
+  showLoggedIn(data.user);
 });
 
 (async function init() {
-  renderTests();
-  const saved = getSavedName();
-  if (saved) {
-    const fresh = await refreshIdentity();
-    showLoggedIn(fresh || saved);
+  const me = await getMe();
+  if (me) {
+    showLoggedIn(me);
   } else {
     showGate();
   }

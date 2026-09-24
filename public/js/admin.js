@@ -118,6 +118,10 @@ function renderTestModes(tests) {
   });
 }
 
+function escapeAttr(v) {
+  return String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
 function renderUsers(users) {
   userList.innerHTML = '';
   if (!users.length) {
@@ -131,51 +135,81 @@ function renderUsers(users) {
 
     const view = document.createElement('div');
     view.className = 'user-row-view';
-    view.style.cssText = 'display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;';
+    view.style.cssText = 'display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;flex-wrap:wrap;';
     view.innerHTML = `
-      <h3 style="font-size:1rem;">${u.name}</h3>
-      <button type="button" class="hint rename-btn">Pārsaukt</button>
+      <div>
+        <h3 style="font-size:1rem;"></h3>
+        <p class="mono"></p>
+      </div>
+      <span style="display:flex;gap:10px;">
+        <button type="button" class="hint rename-btn">Pārsaukt</button>
+        ${u.email ? '<button type="button" class="hint password-btn">Jauna parole</button>' : ''}
+      </span>
     `;
+    view.querySelector('h3').textContent = u.name;
+    view.querySelector('p').textContent = u.email || 'vecais lietotājs (bez konta)';
 
     row.appendChild(view);
     userList.appendChild(row);
 
-    view.querySelector('.rename-btn').addEventListener('click', () => {
+    const openEditor = (fieldsHtml, onSave) => {
       row.innerHTML = '';
       const edit = document.createElement('div');
-      edit.style.cssText = 'display:flex;gap:10px;align-items:center;width:100%;';
+      edit.style.cssText = 'display:flex;gap:10px;align-items:center;width:100%;flex-wrap:wrap;';
       edit.innerHTML = `
-        <input type="text" class="rename-input" value="${u.name.replace(/"/g, '&quot;')}" maxlength="40" style="flex:1;">
-        <button type="button" class="btn-primary rename-save" style="height:38px;">Saglabāt</button>
-        <button type="button" class="hint rename-cancel">Atcelt</button>
+        ${fieldsHtml}
+        <button type="button" class="btn-primary edit-save" style="height:38px;">Saglabāt</button>
+        <button type="button" class="hint edit-cancel">Atcelt</button>
       `;
       row.appendChild(edit);
-      const input = edit.querySelector('.rename-input');
-      input.focus();
-      input.select();
+      const inputs = [...edit.querySelectorAll('input')];
+      inputs[0].focus();
+      inputs[0].select();
 
       const errEl = document.createElement('div');
       errEl.className = 'err-msg';
       row.appendChild(errEl);
 
-      edit.querySelector('.rename-cancel').addEventListener('click', () => loadAdminData());
-
+      edit.querySelector('.edit-cancel').addEventListener('click', () => loadAdminData());
       const save = async () => {
-        const newName = input.value.trim();
-        if (!newName) return;
-        const { ok, data } = await adminPost(`/api/admin/users/${u.id}/rename`, { name: newName });
+        const { ok, data } = await onSave(inputs.map((i) => i.value.trim()));
         if (!ok) {
           errEl.textContent = data.error || 'Kļūda.';
           return;
         }
         loadAdminData();
       };
-      edit.querySelector('.rename-save').addEventListener('click', save);
-      input.addEventListener('keydown', (e) => {
+      edit.querySelector('.edit-save').addEventListener('click', save);
+      inputs.forEach((input) => input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') save();
         if (e.key === 'Escape') loadAdminData();
-      });
+      }));
+    };
+
+    view.querySelector('.rename-btn').addEventListener('click', () => {
+      if (u.email) {
+        openEditor(
+          `<input type="text" value="${escapeAttr(u.firstName)}" maxlength="40" placeholder="Vārds" style="flex:1;">
+           <input type="text" value="${escapeAttr(u.lastName)}" maxlength="40" placeholder="Uzvārds" style="flex:1;">`,
+          ([firstName, lastName]) => adminPost(`/api/admin/users/${u.id}/rename`, { firstName, lastName })
+        );
+      } else {
+        openEditor(
+          `<input type="text" value="${escapeAttr(u.name)}" maxlength="40" style="flex:1;">`,
+          ([name]) => adminPost(`/api/admin/users/${u.id}/rename`, { name })
+        );
+      }
     });
+
+    const pwBtn = view.querySelector('.password-btn');
+    if (pwBtn) {
+      pwBtn.addEventListener('click', () => {
+        openEditor(
+          '<input type="text" maxlength="200" placeholder="Jaunā parole (min. 8 simboli)" autocomplete="off" style="flex:1;">',
+          ([password]) => adminPost(`/api/admin/users/${u.id}/password`, { password })
+        );
+      });
+    }
   });
 }
 

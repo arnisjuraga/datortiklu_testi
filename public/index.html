@@ -12,24 +12,59 @@
     <h1>Datortīklu testi</h1>
     <span class="tag mono">Reģistrs</span>
   </div>
-  <p class="sub">Ievadi vārdu, lai tavi rezultāti tiktu saglabāti.</p>
+  <p class="sub">Pieslēdzies ar savu kontu, lai tavi rezultāti tiktu saglabāti.</p>
 
   <div id="whoami" class="whoami" hidden>
     Ienācis kā <b id="whoamiName"></b>
-    <button id="changeNameBtn" type="button">Mainīt</button>
+    <button id="logoutBtn" type="button">Iziet</button>
   </div>
 
-  <div id="gateCard" class="card">
-    <form class="name-form" id="nameForm">
-      <div>
-        <label for="nameInput">Tavs vārds</label>
-        <div class="name-row">
-          <input type="text" id="nameInput" maxlength="40" autocomplete="off" placeholder="piem., Arnis J." required>
-          <button class="btn-primary" type="submit" id="submitBtn">Sākt</button>
+  <div id="gateCard" class="card" hidden>
+    <div class="auth-tabs">
+      <button type="button" class="auth-tab active" data-tab="login">Pieslēgties</button>
+      <button type="button" class="auth-tab" data-tab="register">Reģistrēties</button>
+    </div>
+
+    <form class="name-form" id="loginForm">
+      <div class="field">
+        <label for="loginEmail">E-pasts</label>
+        <input type="email" id="loginEmail" autocomplete="username" maxlength="120" required>
+      </div>
+      <div class="field">
+        <label for="loginPassword">Parole</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" required>
+      </div>
+      <div class="err-msg" id="loginErr"></div>
+      <button class="btn-primary btn-block" type="submit" id="loginBtn">Pieslēgties</button>
+      <div class="hint">Aizmirsi paroli? Vērsies pie skolotāja — viņš var iestatīt jaunu.</div>
+    </form>
+
+    <form class="name-form" id="registerForm" hidden>
+      <div class="field-row">
+        <div class="field">
+          <label for="regFirstName">Vārds</label>
+          <input type="text" id="regFirstName" autocomplete="given-name" maxlength="40" required>
+        </div>
+        <div class="field">
+          <label for="regLastName">Uzvārds</label>
+          <input type="text" id="regLastName" autocomplete="family-name" maxlength="40" required>
         </div>
       </div>
-      <div class="err-msg" id="errMsg"></div>
-      <div class="hint">Vārds jāreģistrē tikai vienreiz — otru reizi to izmantot nevarēs cits dalībnieks.</div>
+      <div class="field">
+        <label for="regEmail">E-pasts (lietotājvārds)</label>
+        <input type="email" id="regEmail" autocomplete="username" maxlength="120" required>
+      </div>
+      <div class="field">
+        <label for="regPassword">Parole</label>
+        <input type="password" id="regPassword" autocomplete="new-password" minlength="8" required>
+      </div>
+      <div class="field">
+        <label for="regPassword2">Parole atkārtoti</label>
+        <input type="password" id="regPassword2" autocomplete="new-password" minlength="8" required>
+      </div>
+      <div class="err-msg" id="registerErr"></div>
+      <button class="btn-primary btn-block" type="submit" id="registerBtn">Reģistrēties</button>
+      <div class="hint">Parolei jābūt vismaz 8 simbolus garai.</div>
     </form>
   </div>
 
