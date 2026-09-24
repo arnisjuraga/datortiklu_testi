@@ -191,7 +191,7 @@ function renderResults(results) {
       <td>${r.testTitle}</td>
       <td class="mono">${dateStr}</td>
       <td class="mono">${r.score}/${r.total}</td>
-      <td><a class="hint" href="/rezultati/${r.id}" target="_blank">skatīt →</a></td>
+      <td><a class="hint" href="/rezultati/${r.id}">skatīt →</a></td>
     `;
     resultsBody.appendChild(tr);
   });
