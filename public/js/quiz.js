@@ -38,6 +38,33 @@ let selected = [];
 let submitted = false;
 let submitInFlight = false;
 
+const PROGRESS_KEY = `dt_progress_${testId}`;
+
+function saveProgress() {
+  try {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({ questions: QUESTIONS, selected, current }));
+  } catch {
+    /* private mode / storage blocked — progress just won't survive a reload */
+  }
+}
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(PROGRESS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearProgress() {
+  try {
+    localStorage.removeItem(PROGRESS_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -125,6 +152,7 @@ function renderQuestion() {
 
   refreshScoreReadout();
   refreshPorts();
+  saveProgress();
 }
 
 function renderButtons(item, sel) {
@@ -268,6 +296,7 @@ async function submitResult() {
   if (ok && data.resultId) {
     submitted = true;
     submitErr.hidden = true;
+    clearProgress();
     if (reviewEnabled) {
       reviewLink.href = `/rezultati/${data.resultId}`;
       reviewLink.hidden = false;
@@ -310,7 +339,10 @@ async function loadMyResults() {
 }
 
 function resetQuiz(freshOrder) {
-  if (freshOrder) QUESTIONS = shuffle(QUESTIONS);
+  if (freshOrder) {
+    QUESTIONS = shuffle(QUESTIONS);
+    clearProgress();
+  }
   current = 0;
   selected = new Array(QUESTIONS.length).fill(null);
   submitted = false;
@@ -351,6 +383,24 @@ retryBtn.addEventListener('click', () => resetQuiz(true));
   mode = data.mode || 'macisanas';
   reviewEnabled = !!data.reviewEnabled;
   answerType = data.answerType || 'buttons';
-  QUESTIONS = shuffle(data.questions);
-  resetQuiz(false);
+
+  const saved = loadProgress();
+  if (saved && Array.isArray(saved.questions) && saved.questions.length === data.questions.length) {
+    // Resume an in-progress attempt (e.g. after an accidental reload) with
+    // the same shuffled order and answers instead of starting over.
+    QUESTIONS = saved.questions;
+    selected = saved.selected;
+    current = Math.min(saved.current || 0, QUESTIONS.length - 1);
+    submitted = false;
+    submitInFlight = false;
+    submitErr.hidden = true;
+    reviewLink.hidden = true;
+    quizBody.classList.remove('hide');
+    resultEl.classList.remove('show');
+    buildPorts();
+    renderQuestion();
+  } else {
+    QUESTIONS = shuffle(data.questions);
+    resetQuiz(false);
+  }
 })();

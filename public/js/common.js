@@ -17,6 +17,18 @@ function goToLogin() {
   location.href = '/?next=' + encodeURIComponent(location.pathname);
 }
 
+// Clears any saved in-progress test attempts (see quiz.js) so the next
+// person on a shared computer never lands on someone else's answers.
+function clearAllProgress() {
+  try {
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith('dt_progress_'))
+      .forEach((k) => localStorage.removeItem(k));
+  } catch {
+    /* ignore */
+  }
+}
+
 function getAdminPw() {
   try {
     return sessionStorage.getItem('dt_admin_pw') || '';

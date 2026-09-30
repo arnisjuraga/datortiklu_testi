@@ -74,6 +74,12 @@ sarakstu kā meklējamu lauku, nevis pogas. Skat. `data/elektrika.json` un
 
 Katrā testa reizē jautājumu secība tiek sajaukta no jauna.
 
+Iesāktais mēģinājums (sajauktā secība, jau dotās atbildes, pašreizējais
+jautājums) tiek saglabāts pārlūkā (`localStorage`) un pārdzīvo nejaušu lapas
+pārlādēšanu — pazūd tikai pēc testa pabeigšanas vai apzinātas "Testēt
+vēlreiz" nospiešanas. Izlogojoties šie saglabātie mēģinājumi tiek dzēsti, lai
+nākamais lietotājs uz koplietota datora tos neredzētu.
+
 ## Atbilžu apskate
 
 Katram saglabātajam rezultātam tiek atcerēta arī pati atbilžu secība un

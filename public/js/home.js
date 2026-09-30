@@ -100,6 +100,7 @@ document.querySelectorAll('.auth-tab').forEach((b) => b.addEventListener('click'
 
 logoutBtn.addEventListener('click', async () => {
   await apiPost('/api/auth/logout', {});
+  clearAllProgress();
   loginForm.reset();
   registerForm.reset();
   showGate();
