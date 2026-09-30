@@ -5,8 +5,8 @@
     <line x1="145" y1="100" x2="190" y2="100"/>
     <circle cx="100" cy="100" r="62"/>
     <line x1="62" y1="30" x2="82" y2="60"/>
-    <polyline points="62,42 62,30 74,30"/>
+    <polyline points="71,52 82,60 80,47"/>
     <line x1="92" y1="25" x2="107" y2="58"/>
-    <polyline points="94,37 92,25 104,27"/>
+    <polyline points="97,49 107,58 107,45"/>
   </g>
 </svg>
