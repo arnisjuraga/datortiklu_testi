@@ -1,0 +1,12 @@
+<svg viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#e2e8f0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <line x1="10" y1="80" x2="70" y2="80"/>
+    <polygon points="70,50 70,110 125,80" fill="#e2e8f0" stroke="none"/>
+    <line x1="125" y1="50" x2="125" y2="110"/>
+    <line x1="125" y1="80" x2="190" y2="80"/>
+    <line x1="95" y1="45" x2="115" y2="15"/>
+    <polyline points="105,15 115,15 115,25"/>
+    <line x1="115" y1="45" x2="135" y2="15"/>
+    <polyline points="125,15 135,15 135,25"/>
+  </g>
+</svg>

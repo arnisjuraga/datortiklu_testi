@@ -248,6 +248,52 @@ footer.note{
 .opt.miss .opt-hint{color:var(--error);}
 .opt:disabled{cursor:default;}
 
+.qimg{
+  display:flex;
+  justify-content:center;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:20px;
+  margin-bottom:18px;
+}
+.qimg img{max-width:220px;width:100%;height:auto;display:block;}
+
+.combo-wrap{position:relative;}
+.combo-input{
+  width:100%;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:9px;
+  padding:12px 14px;
+  font-family:'Karla',sans-serif;
+  font-size:0.98rem;
+}
+.combo-input:focus{outline:none;border-color:var(--blue);}
+.combo-input.chosen{border-color:var(--blue);background:rgba(91,155,213,0.12);}
+.combo-input.right{border-color:var(--success);background:rgba(87,204,138,0.14);}
+.combo-input.miss{border-color:var(--error);background:rgba(232,99,107,0.14);}
+.combo-list{
+  position:absolute;
+  top:100%;left:0;right:0;
+  margin-top:6px;
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:9px;
+  max-height:240px;
+  overflow-y:auto;
+  z-index:10;
+  box-shadow:0 8px 24px rgba(0,0,0,0.35);
+}
+.combo-item{
+  padding:10px 14px;
+  cursor:pointer;
+  font-size:0.95rem;
+}
+.combo-item:hover{background:rgba(91,155,213,0.15);}
+.combo-feedback{margin-top:10px;font-size:0.82rem;min-height:1.2em;}
+
 .foot{display:flex;align-items:center;justify-content:space-between;margin-top:22px;gap:12px;}
 .score-readout{font-size:0.85rem;color:var(--muted);letter-spacing:0.03em;}
 .score-readout b{color:var(--text);}

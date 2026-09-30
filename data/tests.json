@@ -4,5 +4,12 @@
     "title": "Kabeļtests",
     "description": "UTP/STP, RJ45, T568A/B, PoE, Cat5e–Cat8, optiskā šķiedra un savienotāji.",
     "file": "kabeli.json"
+  },
+  {
+    "id": "elektrika",
+    "title": "Elektrības slēgumi",
+    "description": "Vājstrāvas shēmu simboli — atpazīsti komponenti no attēla.",
+    "file": "elektrika.json",
+    "answerType": "dropdown"
   }
 ]

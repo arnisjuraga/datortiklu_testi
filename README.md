@@ -30,6 +30,16 @@ Katrs tests ir pieejams pa savu URL: `/testi/<test-id>` (piem. `/testi/kabeli`).
    ```
 3. Viss cits (UI, reģistrācija, rezultāti) darbojas automātiski.
 
+### Attēls un dropdown atbildes (piem. shēmu simbolu atpazīšana)
+
+Testam `data/tests.json` ierakstā var pievienot `"answerType": "dropdown"` —
+tad atbilžu poga-saraksts tiek aizstāts ar meklējamu (autocomplete) lauku.
+Katram jautājumam papildus var pievienot `"image": "/img/.../fails.svg"` —
+attēls parādās virs jautājuma teksta gan testa lapā, gan atbilžu apskatē.
+`opts`/`a` shēma paliek tā pati — vienkārši ērtāk parādīt garu variantu
+sarakstu kā meklējamu lauku, nevis pogas. Skat. `data/elektrika.json` un
+`public/img/elektrika/*.svg` piemēram (vājstrāvas komponenšu simboli).
+
 ## Konti un pieslēgšanās
 
 - Reģistrācijā jānorāda vārds, uzvārds, e-pasts (tas ir arī lietotājvārds) un

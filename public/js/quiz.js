@@ -6,8 +6,14 @@ const playerNameEl = document.getElementById('playerName');
 const portsEl = document.getElementById('ports');
 const qNum = document.getElementById('qNum');
 const qCat = document.getElementById('qCat');
+const qImgWrap = document.getElementById('qImgWrap');
+const qImg = document.getElementById('qImg');
 const qText = document.getElementById('qText');
 const optsEl = document.getElementById('opts');
+const comboWrap = document.getElementById('comboWrap');
+const comboInput = document.getElementById('comboInput');
+const comboList = document.getElementById('comboList');
+const comboFeedback = document.getElementById('comboFeedback');
 const scoreLabel = document.getElementById('scoreLabel');
 const scoreLive = document.getElementById('scoreLive');
 const scoreTotal = document.getElementById('scoreTotal');
@@ -26,6 +32,7 @@ const submitErr = document.getElementById('submitErr');
 let QUESTIONS = [];
 let mode = 'macisanas';
 let reviewEnabled = false;
+let answerType = 'buttons';
 let current = 0;
 let selected = [];
 let submitted = false;
@@ -93,10 +100,36 @@ function renderQuestion() {
   qNum.textContent = `JAUTĀJUMS ${String(current + 1).padStart(2, '0')}/${QUESTIONS.length}`;
   qCat.textContent = mode === 'kontroldarbs' ? 'KONTROLDARBS' : 'MĀCĪŠANĀS';
   qText.textContent = item.q;
+
+  if (item.image) {
+    qImg.src = item.image;
+    qImgWrap.hidden = false;
+  } else {
+    qImgWrap.hidden = true;
+  }
+
+  if (answerType === 'dropdown') {
+    optsEl.hidden = true;
+    comboWrap.hidden = false;
+    renderCombo(item, selected[current]);
+  } else {
+    comboWrap.hidden = true;
+    optsEl.hidden = false;
+    renderButtons(item, selected[current]);
+  }
+
+  prevBtn.classList.toggle('show', current > 0);
+  nextBtn.classList.add('show');
+  const isLast = current === QUESTIONS.length - 1;
+  nextBtn.textContent = isLast ? (mode === 'kontroldarbs' ? 'BEIGT TESTU' : 'REZULTĀTS →') : 'TĀLĀK →';
+
+  refreshScoreReadout();
+  refreshPorts();
+}
+
+function renderButtons(item, sel) {
   optsEl.innerHTML = '';
   const letters = ['A', 'B', 'C', 'D'];
-  const sel = selected[current];
-
   item.opts.forEach((optText, i) => {
     const btn = document.createElement('button');
     btn.className = 'opt';
@@ -115,15 +148,64 @@ function renderQuestion() {
     btn.addEventListener('click', () => selectOption(i));
     optsEl.appendChild(btn);
   });
-
-  prevBtn.classList.toggle('show', current > 0);
-  nextBtn.classList.add('show');
-  const isLast = current === QUESTIONS.length - 1;
-  nextBtn.textContent = isLast ? (mode === 'kontroldarbs' ? 'BEIGT TESTU' : 'REZULTĀTS →') : 'TĀLĀK →';
-
-  refreshScoreReadout();
-  refreshPorts();
 }
+
+function renderCombo(item, sel) {
+  comboInput.value = sel !== null ? item.opts[sel] : '';
+  comboInput.classList.remove('right', 'miss', 'chosen');
+  comboList.innerHTML = '';
+  comboList.hidden = true;
+  comboFeedback.textContent = '';
+  comboFeedback.style.color = '';
+
+  if (sel !== null) {
+    if (mode === 'macisanas') {
+      if (sel === item.a) {
+        comboInput.classList.add('right');
+        comboFeedback.textContent = '✓ pareizi';
+        comboFeedback.style.color = 'var(--success)';
+      } else {
+        comboInput.classList.add('miss');
+        comboFeedback.textContent = `✗ pareizā atbilde: ${item.opts[item.a]}`;
+        comboFeedback.style.color = 'var(--error)';
+      }
+    } else {
+      comboInput.classList.add('chosen');
+    }
+  }
+}
+
+function comboSuggestions(item, query) {
+  const q = query.trim().toLowerCase();
+  comboList.innerHTML = '';
+  const matches = item.opts
+    .map((opt, i) => ({ opt, i }))
+    .filter(({ opt }) => opt.toLowerCase().includes(q));
+
+  matches.forEach(({ opt, i }) => {
+    const row = document.createElement('div');
+    row.className = 'combo-item';
+    row.textContent = opt;
+    row.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      selectOption(i);
+    });
+    comboList.appendChild(row);
+  });
+  comboList.hidden = matches.length === 0;
+}
+
+comboInput.addEventListener('input', () => comboSuggestions(QUESTIONS[current], comboInput.value));
+comboInput.addEventListener('focus', () => {
+  comboInput.select();
+  comboSuggestions(QUESTIONS[current], '');
+});
+comboInput.addEventListener('blur', () => {
+  setTimeout(() => { comboList.hidden = true; }, 120);
+});
+comboInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') comboList.hidden = true;
+});
 
 function selectOption(i) {
   selected[current] = i;
@@ -153,9 +235,9 @@ async function showResult() {
   finalScore.innerHTML = `${score}<span>/${QUESTIONS.length}</span>`;
   let v, d, cls;
   const pct = score / QUESTIONS.length;
-  if (pct >= 0.87) { v = 'LĪNIJA TĪRA'; cls = 'good'; d = 'Izcili — kabeļu teorija tev sēž kā T568B secība atmiņā.'; }
-  else if (pct >= 0.6) { v = 'SIGNĀLS STABILS'; cls = 'mid'; d = 'Labs rezultāts. Daži savienojumi vēl jāpārbauda vēlreiz.'; }
-  else { v = 'TRAUCĒJUMI LĪNIJĀ'; cls = 'bad'; d = 'Ir vērts atkārtot pamatus.'; }
+  if (pct >= 0.87) { v = 'IZCILI'; cls = 'good'; d = 'Ļoti stabils rezultāts.'; }
+  else if (pct >= 0.6) { v = 'LABI'; cls = 'mid'; d = 'Pietiekams rezultāts, dažas lietas vēl vērts atkārtot.'; }
+  else { v = 'JĀPAPILDINA'; cls = 'bad'; d = 'Ir vērts atkārtot pamatus.'; }
   verdict.textContent = v;
   verdict.className = 'verdict ' + cls;
   verdictDesc.textContent = d;
@@ -173,6 +255,7 @@ async function submitResult() {
     opts: q.opts,
     correct: q.a,
     selected: selected[i],
+    image: q.image || null,
   }));
   const { ok, status, data } = await apiPost('/api/results', {
     testId,
@@ -267,6 +350,7 @@ retryBtn.addEventListener('click', () => resetQuiz(true));
   testTag.textContent = `${data.questions.length} jautājumi`;
   mode = data.mode || 'macisanas';
   reviewEnabled = !!data.reviewEnabled;
+  answerType = data.answerType || 'buttons';
   QUESTIONS = shuffle(data.questions);
   resetQuiz(false);
 })();

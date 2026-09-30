@@ -28,6 +28,7 @@ function loadTest(testId) {
   return {
     ...meta,
     questions,
+    answerType: meta.answerType || 'buttons',
     mode: db.getTestMode(meta.id),
     enabled: db.getTestEnabled(meta.id),
     reviewEnabled: db.getReviewEnabled(meta.id),
@@ -133,6 +134,7 @@ app.get('/api/tests', (req, res) => {
         title: t.title,
         description: t.description,
         questionCount: questions.length,
+        answerType: t.answerType || 'buttons',
         mode: db.getTestMode(t.id),
         reviewEnabled: db.getReviewEnabled(t.id),
       };

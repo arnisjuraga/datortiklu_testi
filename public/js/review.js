@@ -34,6 +34,37 @@ function renderQuestionCard(item, index) {
   qtext.style.marginBottom = '14px';
   qtext.textContent = item.q;
 
+  card.appendChild(meta);
+
+  if (item.image) {
+    const img = document.createElement('img');
+    img.src = item.image;
+    img.alt = '';
+    img.style.cssText = 'display:block;max-width:220px;margin:0 auto 16px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:16px;';
+    card.appendChild(img);
+  }
+
+  card.appendChild(qtext);
+
+  if (item.image) {
+    const summary = document.createElement('div');
+    summary.className = 'opts';
+    if (!noAnswer) {
+      const line = document.createElement('div');
+      line.className = 'opt ' + (isRight ? 'right' : 'miss');
+      line.innerHTML = `<span>Tava atbilde:</span><span class="opt-hint mono">${item.opts[item.selected]}</span>`;
+      summary.appendChild(line);
+    }
+    if (noAnswer || !isRight) {
+      const line2 = document.createElement('div');
+      line2.className = 'opt correct-hint';
+      line2.innerHTML = `<span>Pareizā atbilde:</span><span class="opt-hint mono">${item.opts[item.correct]}</span>`;
+      summary.appendChild(line2);
+    }
+    card.appendChild(summary);
+    return card;
+  }
+
   const opts = document.createElement('div');
   opts.className = 'opts';
   item.opts.forEach((optText, i) => {
@@ -62,8 +93,6 @@ function renderQuestionCard(item, index) {
     opts.appendChild(div);
   });
 
-  card.appendChild(meta);
-  card.appendChild(qtext);
   card.appendChild(opts);
   return card;
 }

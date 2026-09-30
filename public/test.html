@@ -25,8 +25,14 @@
         <span class="mono" id="qNum">JAUTĀJUMS 01</span>
         <span class="mono" id="qCat"></span>
       </div>
+      <div class="qimg" id="qImgWrap" hidden><img id="qImg" alt=""></div>
       <div class="qtext" id="qText"></div>
       <div class="opts" id="opts"></div>
+      <div class="combo-wrap" id="comboWrap" hidden>
+        <input type="text" id="comboInput" class="combo-input" autocomplete="off" placeholder="Sāc rakstīt nosaukumu…">
+        <div class="combo-list" id="comboList" hidden></div>
+        <div class="combo-feedback mono" id="comboFeedback"></div>
+      </div>
       <div class="foot">
         <button class="prev" id="prevBtn">← IEPRIEKŠĒJAIS</button>
         <span class="score-readout mono"><span id="scoreLabel">PUNKTI</span> <b id="scoreLive">0</b>/<span id="scoreTotal">0</span></span>
