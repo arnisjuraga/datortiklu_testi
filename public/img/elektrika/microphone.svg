@@ -1,7 +1,8 @@
-<svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
-  <g fill="none" stroke="#e2e8f0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="10" y1="60" x2="55" y2="60"/>
-    <path d="M55 30 L145 15 L145 105 L55 90 Z"/>
-    <line x1="145" y1="60" x2="190" y2="60"/>
+<svg viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="#e2e8f0" stroke-width="5" stroke-linecap="round">
+    <line x1="10" y1="45" x2="80" y2="45"/>
+    <line x1="10" y1="95" x2="80" y2="95"/>
+    <circle cx="115" cy="70" r="58"/>
   </g>
+  <rect x="168" y="15" width="10" height="110" fill="#e2e8f0"/>
 </svg>
