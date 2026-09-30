@@ -17,7 +17,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -49,7 +48,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -81,7 +79,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -113,7 +110,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -145,7 +141,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -177,7 +172,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -209,7 +203,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -241,7 +234,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -273,7 +265,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -305,7 +296,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -337,7 +327,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -369,7 +358,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -401,7 +389,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -433,7 +420,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -446,38 +432,6 @@
       "Zemējums (GND)"
     ],
     "a": 13
-  },
-  {
-    "q": "Kāds ir šis simbols?",
-    "image": "/img/elektrika/potentiometer.svg",
-    "opts": [
-      "Ampērmetrs",
-      "Antena",
-      "Baterija (1 elementa)",
-      "Baterija (vairāki elementi)",
-      "Barošanas avots",
-      "Buzzeris",
-      "Diode",
-      "Drošinātājs",
-      "Gaismas diode (LED)",
-      "Kondensators",
-      "Fotorezistors (LDR)",
-      "Mikrofons",
-      "Motors",
-      "Poga",
-      "Potenciometrs",
-      "Rezistors (taisnstūra simbols)",
-      "Rezistors (zigzag simbols)",
-      "Skaļrunis",
-      "Slēdzis",
-      "Spole",
-      "Transformators",
-      "Vads",
-      "Vadu krustojums (nesavienots)",
-      "Voltmetrs",
-      "Zemējums (GND)"
-    ],
-    "a": 14
   },
   {
     "q": "Kāds ir šis simbols?",
@@ -497,7 +451,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -509,7 +462,7 @@
       "Voltmetrs",
       "Zemējums (GND)"
     ],
-    "a": 15
+    "a": 14
   },
   {
     "q": "Kāds ir šis simbols?",
@@ -529,7 +482,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -541,7 +493,7 @@
       "Voltmetrs",
       "Zemējums (GND)"
     ],
-    "a": 16
+    "a": 15
   },
   {
     "q": "Kāds ir šis simbols?",
@@ -561,7 +513,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -573,7 +524,7 @@
       "Voltmetrs",
       "Zemējums (GND)"
     ],
-    "a": 17
+    "a": 16
   },
   {
     "q": "Kāds ir šis simbols?",
@@ -593,7 +544,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -605,7 +555,7 @@
       "Voltmetrs",
       "Zemējums (GND)"
     ],
-    "a": 18
+    "a": 17
   },
   {
     "q": "Kāds ir šis simbols?",
@@ -625,7 +575,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -637,7 +586,7 @@
       "Voltmetrs",
       "Zemējums (GND)"
     ],
-    "a": 19
+    "a": 18
   },
   {
     "q": "Kāds ir šis simbols?",
@@ -657,7 +606,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -669,7 +617,7 @@
       "Voltmetrs",
       "Zemējums (GND)"
     ],
-    "a": 20
+    "a": 19
   },
   {
     "q": "Kāds ir šis simbols?",
@@ -689,7 +637,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -701,7 +648,7 @@
       "Voltmetrs",
       "Zemējums (GND)"
     ],
-    "a": 21
+    "a": 20
   },
   {
     "q": "Kāds ir šis simbols?",
@@ -721,7 +668,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -733,7 +679,7 @@
       "Voltmetrs",
       "Zemējums (GND)"
     ],
-    "a": 22
+    "a": 21
   },
   {
     "q": "Kāds ir šis simbols?",
@@ -753,7 +699,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -765,7 +710,7 @@
       "Voltmetrs",
       "Zemējums (GND)"
     ],
-    "a": 23
+    "a": 22
   },
   {
     "q": "Kāds ir šis simbols?",
@@ -785,7 +730,6 @@
       "Mikrofons",
       "Motors",
       "Poga",
-      "Potenciometrs",
       "Rezistors (taisnstūra simbols)",
       "Rezistors (zigzag simbols)",
       "Skaļrunis",
@@ -797,6 +741,6 @@
       "Voltmetrs",
       "Zemējums (GND)"
     ],
-    "a": 24
+    "a": 23
   }
 ]
