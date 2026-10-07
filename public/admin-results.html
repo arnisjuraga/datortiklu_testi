@@ -33,16 +33,20 @@
           <option value="unknown">Nav zināms (vecie rezultāti)</option>
         </select>
       </div>
+      <label class="check-inline">
+        <input type="checkbox" id="latestOnly">
+        Tikai pēdējais katram testam
+      </label>
     </div>
     <p class="hint mono" id="resultsCount"></p>
-    <p class="hint" style="margin:0 0 10px;">Atzīme = rezultāts / maksimums × 10 (lineāri, 10 ballu skala).</p>
+    <p class="hint" style="margin:0 0 10px;">Atzīme = rezultāts / maksimums × 10 (lineāri, 10 ballu skala).
+      <span class="latest-badge">PĒDĒJAIS</span> = jaunākais mēģinājums šajā testā (ņemot vērā filtrus) — to liec žurnālā.</p>
 
     <div style="overflow-x:auto;">
-      <table class="admin-table">
+      <table class="admin-table results-grouped" id="resultsTable">
         <thead>
-          <tr><th>Vārds</th><th>Tests</th><th>Režīms</th><th>Datums</th><th>Rezultāts</th><th>Atzīme (0,1)</th><th>Atzīme</th><th></th></tr>
+          <tr><th>Tests</th><th>Režīms</th><th>Datums</th><th>Rezultāts</th><th>Atzīme (0,1)</th><th>Atzīme</th><th></th></tr>
         </thead>
-        <tbody id="resultsBody"></tbody>
       </table>
     </div>
     <p class="empty" id="resultsEmpty" hidden></p>

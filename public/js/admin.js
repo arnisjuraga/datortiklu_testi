@@ -88,6 +88,28 @@ function escapeAttr(v) {
   return String(v || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
+// Lowercase, strip Latvian diacritics and punctuation: "Artūrs" → "arturs".
+function nameTokens(name) {
+  return String(name || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9 ]/g, ' ')
+    .split(/\s+/).filter(Boolean);
+}
+
+// Best-guess account for a legacy name: same first name, and if the legacy
+// name has a second word (surname or initial), the surname must start with it.
+// Only a unique match is suggested.
+function suggestAccount(legacyName, accounts) {
+  const [first, second] = nameTokens(legacyName);
+  if (!first) return null;
+  const matches = accounts.filter((a) => {
+    const [aFirst, ...aRest] = nameTokens(a.name);
+    if (aFirst !== first) return false;
+    return !second || aRest.some((t) => t.startsWith(second));
+  });
+  return matches.length === 1 ? matches[0] : null;
+}
+
 function renderUsers(users) {
   userList.innerHTML = '';
   if (!users.length) {
@@ -107,13 +129,14 @@ function renderUsers(users) {
         <h3 style="font-size:1rem;"></h3>
         <p class="mono"></p>
       </div>
-      <span style="display:flex;gap:10px;">
+      <span style="display:flex;gap:10px;flex-wrap:wrap;">
         <button type="button" class="hint rename-btn">Pārsaukt</button>
         ${u.email ? '<button type="button" class="hint password-btn">Jauna parole</button>' : ''}
+        ${!u.email && u.resultCount ? '<button type="button" class="hint merge-btn">Pievienot kontam</button>' : ''}
       </span>
     `;
     view.querySelector('h3').textContent = u.name;
-    view.querySelector('p').textContent = u.email || 'vecais lietotājs (bez konta)';
+    view.querySelector('p').textContent = (u.email || 'vecais lietotājs (bez konta)') + ` · ${u.resultCount} rez.`;
 
     row.appendChild(view);
     userList.appendChild(row);
@@ -128,9 +151,9 @@ function renderUsers(users) {
         <button type="button" class="hint edit-cancel">Atcelt</button>
       `;
       row.appendChild(edit);
-      const inputs = [...edit.querySelectorAll('input')];
+      const inputs = [...edit.querySelectorAll('input, select')];
       inputs[0].focus();
-      inputs[0].select();
+      if (inputs[0].select) inputs[0].select();
 
       const errEl = document.createElement('div');
       errEl.className = 'err-msg';
@@ -166,6 +189,35 @@ function renderUsers(users) {
         );
       }
     });
+
+    const mergeBtn = view.querySelector('.merge-btn');
+    if (mergeBtn) {
+      mergeBtn.addEventListener('click', () => {
+        const accounts = users.filter((a) => a.email);
+        const suggested = suggestAccount(u.name, accounts);
+        const options = accounts
+          .map((a) => `<option value="${a.id}" ${suggested && suggested.id === a.id ? 'selected' : ''}>${escapeAttr(a.name)} (${escapeAttr(a.email)})</option>`)
+          .join('');
+        openEditor(
+          `<span class="hint">${escapeAttr(u.name)} (${u.resultCount} rez.) →</span>
+           <select style="flex:1;min-width:200px;">
+             <option value="" ${suggested ? '' : 'selected'}>— izvēlies kontu —</option>
+             ${options}
+           </select>`,
+          ([accountId]) => accountId
+            ? adminPost(`/api/admin/users/${u.id}/merge`, { accountId: Number(accountId) })
+            : Promise.resolve({ ok: false, data: { error: 'Jāizvēlas konts.' } })
+        );
+        row.querySelector('.edit-save').textContent = 'Pievienot';
+        const note = document.createElement('div');
+        note.className = 'hint';
+        note.style.width = '100%';
+        note.textContent = suggested
+          ? 'Ieteikts pēc vārda — pārbaudi, vai tas tiešām ir tas pats dalībnieks.'
+          : 'Automātisks ieteikums nav atrasts — izvēlies kontu pats.';
+        row.insertBefore(note, row.querySelector('.err-msg'));
+      });
+    }
 
     const pwBtn = view.querySelector('.password-btn');
     if (pwBtn) {

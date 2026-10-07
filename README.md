@@ -65,7 +65,13 @@ sarakstu kā meklējamu lauku, nevis pogas. Skat. `data/elektrika.json` un
   testa un režīma. Atzīme ir lineāra 10 ballu skalā (rezultāts / maksimums × 10),
   rādīta ar vienu zīmi aiz komata un noapaļota līdz veselam. Režīms tiek
   saglabāts katram rezultātam iesniegšanas brīdī; rezultātiem, kas saglabāti
-  pirms tā ieviešanas, režīms nav zināms;
+  pirms tā ieviešanas, režīms nav zināms. Rezultāti sagrupēti pa dalībniekiem;
+  katram testam jaunākais mēģinājums (ņemot vērā filtrus) iezīmēts kā
+  "PĒDĒJAIS", un var rādīt tikai tos;
+- "Dalībnieki" sadaļā vecu lietotāju (tikai vārds, bez konta) ar "Pievienot
+  kontam" piesaistīt dalībnieka kontam — visi viņa rezultāti pāriet uz kontu
+  (oriģinālais lietotājs tiek atcerēts `results.legacy_user_id`). Konts tiek
+  ieteikts pēc vārda, bet izvēle jāapstiprina adminam;
 - labot dalībnieka vārdu un uzvārdu un iestatīt jaunu paroli ("Dalībnieki"
   sadaļā);
 - katram testam ieslēgt/izslēgt pieejamību (izslēgts tests pazūd no publiskā

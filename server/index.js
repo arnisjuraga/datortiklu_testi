@@ -341,6 +341,17 @@ app.post('/api/admin/users/:userId/rename', requireAdmin, (req, res) => {
   }
 });
 
+app.post('/api/admin/users/:userId/merge', requireAdmin, (req, res) => {
+  const accountId = Number(req.body?.accountId);
+  if (!Number.isInteger(accountId)) return res.status(400).json({ error: 'Jāizvēlas konts.' });
+  const result = db.mergeLegacyUser(Number(req.params.userId), accountId);
+  if (result.error === 'legacy') {
+    return res.status(400).json({ error: 'Pievienot kontam var tikai veco lietotāju (bez e-pasta).' });
+  }
+  if (result.error === 'account') return res.status(400).json({ error: 'Izvēlētais konts nav atrasts.' });
+  res.json({ ok: true, moved: result.moved });
+});
+
 app.post('/api/admin/users/:userId/password', requireAdmin, (req, res) => {
   const password = req.body?.password;
   const err = validatePassword(password);

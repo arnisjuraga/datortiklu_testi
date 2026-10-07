@@ -504,3 +504,24 @@ select:focus{outline:none;border-color:var(--blue);}
 .mode-badge.learn{color:var(--blue);border-color:var(--blue);background:rgba(91,155,213,0.1);}
 .mode-badge.unknown{color:var(--muted);}
 .grade-whole{font-weight:700;color:var(--accent);}
+.check-inline{display:flex;align-items:center;gap:8px;align-self:flex-end;padding-bottom:10px;font-size:0.85rem;color:var(--muted);cursor:pointer;}
+.results-grouped .user-head td{
+  background:var(--panel2);
+  border-top:2px solid var(--border);
+  padding-top:12px;
+}
+.results-grouped .user-head .hint{margin-left:8px;}
+.results-grouped tr.latest td{background:rgba(239,133,68,0.08);}
+.results-grouped tr.latest td:first-child{box-shadow:inset 3px 0 0 var(--accent);}
+.results-grouped tr:not(.latest):not(.user-head) td{color:var(--muted);}
+.results-grouped tr:not(.latest):not(.user-head) .grade-whole{color:var(--muted);font-weight:400;}
+.latest-badge{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.65rem;
+  color:var(--accent);
+  border:1px solid var(--accent);
+  border-radius:4px;
+  padding:1px 5px;
+  margin-left:6px;
+  white-space:nowrap;
+}

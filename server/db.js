@@ -90,6 +90,15 @@ if (!resultsColumns.includes('answers')) {
 if (!resultsColumns.includes('mode')) {
   db.exec('ALTER TABLE results ADD COLUMN mode TEXT');
 }
+// Set when an admin attaches a legacy (name-only) user to an account:
+// results.legacy_user_id remembers who the result originally belonged to,
+// users.merged_into marks the legacy user as absorbed.
+if (!resultsColumns.includes('legacy_user_id')) {
+  db.exec('ALTER TABLE results ADD COLUMN legacy_user_id INTEGER');
+}
+if (!db.prepare('PRAGMA table_info(users)').all().some((c) => c.name === 'merged_into')) {
+  db.exec('ALTER TABLE users ADD COLUMN merged_into INTEGER');
+}
 
 function normalizeEmail(email) {
   return email.trim().toLowerCase();
@@ -146,8 +155,9 @@ function getUserById(id) {
 function getAllUsers() {
   return db
     .prepare(
-      `SELECT id, name, first_name AS firstName, last_name AS lastName, email, created_at AS createdAt
-       FROM users ORDER BY name COLLATE NOCASE`
+      `SELECT u.id, u.name, u.first_name AS firstName, u.last_name AS lastName, u.email, u.created_at AS createdAt,
+              (SELECT COUNT(*) FROM results r WHERE r.user_id = u.id) AS resultCount
+       FROM users u WHERE u.merged_into IS NULL ORDER BY u.name COLLATE NOCASE`
     )
     .all();
 }
@@ -171,6 +181,22 @@ function renameUser(id, { name, firstName, lastName }) {
     db.prepare('UPDATE users SET name = ?, name_key = ? WHERE id = ?').run(name.trim(), key, id);
   }
   return publicUser(getUserById(id));
+}
+
+// Moves all results of a legacy (name-only) user to an account.
+function mergeLegacyUser(legacyId, accountId) {
+  const legacy = getUserById(legacyId);
+  const account = getUserById(accountId);
+  if (!legacy || legacy.email || legacy.merged_into) return { error: 'legacy' };
+  if (!account || !account.email) return { error: 'account' };
+  const moved = db.transaction(() => {
+    const info = db
+      .prepare('UPDATE results SET legacy_user_id = user_id, user_id = ? WHERE user_id = ?')
+      .run(account.id, legacy.id);
+    db.prepare('UPDATE users SET merged_into = ? WHERE id = ?').run(account.id, legacy.id);
+    return info.changes;
+  })();
+  return { moved };
 }
 
 function setPassword(id, password) {
@@ -286,10 +312,12 @@ function setReviewEnabled(testId, enabled) {
 function getAllResults() {
   return db
     .prepare(
-      `SELECT r.id AS id, u.name AS name, r.test_id AS testId, r.score AS score, r.total AS total,
-              r.mode AS mode, r.created_at AS createdAt
+      `SELECT r.id AS id, r.user_id AS userId, u.name AS name, u.email AS email, r.test_id AS testId,
+              r.score AS score, r.total AS total, r.mode AS mode, r.created_at AS createdAt,
+              lu.name AS legacyName
        FROM results r
        JOIN users u ON u.id = r.user_id
+       LEFT JOIN users lu ON lu.id = r.legacy_user_id
        ORDER BY r.created_at DESC`
     )
     .all();
@@ -302,6 +330,7 @@ module.exports = {
   getAllUsers,
   renameUser,
   setPassword,
+  mergeLegacyUser,
   createSession,
   getSessionUser,
   deleteSession,

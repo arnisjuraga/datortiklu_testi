@@ -1,6 +1,7 @@
 const testFilter = document.getElementById('testFilter');
 const modeFilter = document.getElementById('modeFilter');
-const resultsBody = document.getElementById('resultsBody');
+const latestOnly = document.getElementById('latestOnly');
+const resultsTable = document.getElementById('resultsTable');
 const resultsEmpty = document.getElementById('resultsEmpty');
 const resultsCount = document.getElementById('resultsCount');
 
@@ -34,6 +35,7 @@ function readFiltersFromUrl() {
   const params = new URLSearchParams(location.search);
   testFilter.value = params.get('tests') || '';
   modeFilter.value = params.get('rezims') || '';
+  latestOnly.checked = params.get('pedejie') === '1';
   // Unknown value in the URL (e.g. removed test) → fall back to "all".
   if (testFilter.selectedIndex === -1) testFilter.value = '';
   if (modeFilter.selectedIndex === -1) modeFilter.value = '';
@@ -43,8 +45,14 @@ function writeFiltersToUrl() {
   const params = new URLSearchParams();
   if (testFilter.value) params.set('tests', testFilter.value);
   if (modeFilter.value) params.set('rezims', modeFilter.value);
+  if (latestOnly.checked) params.set('pedejie', '1');
   const qs = params.toString();
   history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
+}
+
+function formatDate(createdAt) {
+  const date = new Date(createdAt.replace(' ', 'T') + 'Z');
+  return date.toLocaleString('lv-LV', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function render() {
@@ -57,29 +65,56 @@ function render() {
     return true;
   });
 
-  resultsBody.innerHTML = '';
+  // user → test → attempts (newest first). "Latest" is per user and test,
+  // among the results that pass the filters.
+  const byUser = new Map();
   rows.forEach((r) => {
-    const tr = document.createElement('tr');
-    const date = new Date(r.createdAt.replace(' ', 'T') + 'Z');
-    const dateStr = date.toLocaleString('lv-LV', { dateStyle: 'medium', timeStyle: 'short' });
-    const g = grade(r.score, r.total);
-    tr.innerHTML = `
-      <td>${escapeHtml(r.name)}</td>
-      <td>${escapeHtml(r.testTitle)}</td>
-      <td>${modeBadge(r.mode)}</td>
-      <td class="mono">${dateStr}</td>
-      <td class="mono">${r.score}/${r.total}</td>
-      <td class="mono">${g.oneDecimal}</td>
-      <td class="mono grade-whole">${g.whole}</td>
-      <td><a class="hint" href="/rezultati/${r.id}">skatīt →</a></td>
-    `;
-    resultsBody.appendChild(tr);
+    if (!byUser.has(r.userId)) byUser.set(r.userId, { name: r.name, email: r.email, tests: new Map() });
+    const tests = byUser.get(r.userId).tests;
+    if (!tests.has(r.testId)) tests.set(r.testId, []);
+    tests.get(r.testId).push(r);
+  });
+  const users = [...byUser.values()].sort((a, b) => a.name.localeCompare(b.name, 'lv', { sensitivity: 'base' }));
+
+  resultsTable.querySelectorAll('tbody').forEach((tb) => tb.remove());
+  let shown = 0;
+  users.forEach((u) => {
+    const tbody = document.createElement('tbody');
+    tbody.className = 'user-group';
+    const head = document.createElement('tr');
+    head.className = 'user-head';
+    head.innerHTML = `<td colspan="7"><b>${escapeHtml(u.name)}</b>
+      <span class="hint mono">${u.email ? escapeHtml(u.email) : 'vecais lietotājs (bez konta)'}</span></td>`;
+    tbody.appendChild(head);
+
+    const testGroups = [...u.tests.values()].sort((a, b) => a[0].testTitle.localeCompare(b[0].testTitle, 'lv'));
+    testGroups.forEach((attempts) => {
+      attempts.sort((a, b) => (b.createdAt.localeCompare(a.createdAt)) || (b.id - a.id));
+      (latestOnly.checked ? attempts.slice(0, 1) : attempts).forEach((r, i) => {
+        const isLatest = i === 0;
+        const g = grade(r.score, r.total);
+        const tr = document.createElement('tr');
+        if (isLatest) tr.className = 'latest';
+        tr.innerHTML = `
+          <td>${escapeHtml(r.testTitle)}${isLatest ? ' <span class="latest-badge">PĒDĒJAIS</span>' : ''}
+            ${r.legacyName ? `<div class="hint">kā „${escapeHtml(r.legacyName)}”</div>` : ''}</td>
+          <td>${modeBadge(r.mode)}</td>
+          <td class="mono">${formatDate(r.createdAt)}</td>
+          <td class="mono">${r.score}/${r.total}</td>
+          <td class="mono">${g.oneDecimal}</td>
+          <td class="mono grade-whole">${g.whole}</td>
+          <td><a class="hint" href="/rezultati/${r.id}">skatīt →</a></td>
+        `;
+        tbody.appendChild(tr);
+        shown++;
+      });
+    });
+    resultsTable.appendChild(tbody);
   });
 
-  resultsCount.textContent = rows.length === allResults.length
-    ? `${rows.length} rezultāti`
-    : `${rows.length} no ${allResults.length} rezultātiem`;
-  resultsEmpty.hidden = rows.length > 0;
+  resultsCount.textContent = `${users.length} dalībnieki · ${shown} rezultāti` +
+    (rows.length === allResults.length ? '' : ` (filtrēti no ${allResults.length})`);
+  resultsEmpty.hidden = users.length > 0;
   resultsEmpty.textContent = allResults.length ? 'Nav rezultātu, kas atbilst filtram.' : 'Vēl nav neviena rezultāta.';
 }
 
@@ -90,6 +125,7 @@ function onFilterChange() {
 
 testFilter.addEventListener('change', onFilterChange);
 modeFilter.addEventListener('change', onFilterChange);
+latestOnly.addEventListener('change', onFilterChange);
 
 (async function init() {
   if (!getPw()) {
