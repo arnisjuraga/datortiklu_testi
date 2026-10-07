@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rezultāti — Admin — Datortīklu testi</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>Rezultāti</h1>
+    <span class="tag mono">Admin</span>
+  </div>
+  <div class="whoami">
+    <a href="/admin" class="hint">← admin panelis</a>
+  </div>
+
+  <div class="card">
+    <div class="filter-bar">
+      <div class="field">
+        <label for="testFilter">Tests</label>
+        <select id="testFilter">
+          <option value="">Visi testi</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="modeFilter">Režīms</label>
+        <select id="modeFilter">
+          <option value="">Visi režīmi</option>
+          <option value="kontroldarbs">Kontroldarbs</option>
+          <option value="macisanas">Mācīšanās</option>
+          <option value="unknown">Nav zināms (vecie rezultāti)</option>
+        </select>
+      </div>
+    </div>
+    <p class="hint mono" id="resultsCount"></p>
+    <p class="hint" style="margin:0 0 10px;">Atzīme = rezultāts / maksimums × 10 (lineāri, 10 ballu skala).</p>
+
+    <div style="overflow-x:auto;">
+      <table class="admin-table">
+        <thead>
+          <tr><th>Vārds</th><th>Tests</th><th>Režīms</th><th>Datums</th><th>Rezultāts</th><th>Atzīme (0,1)</th><th>Atzīme</th><th></th></tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+    <p class="empty" id="resultsEmpty" hidden></p>
+  </div>
+
+  <footer class="note mono">DATORTIKLU_TESTI · ARNISJURAGA</footer>
+</div>
+
+<script src="/js/common.js"></script>
+<script src="/js/admin-common.js"></script>
+<script src="/js/admin-results.js"></script>
+</body>
+</html>

@@ -85,6 +85,11 @@ const resultsColumns = db.prepare('PRAGMA table_info(results)').all().map((c) =>
 if (!resultsColumns.includes('answers')) {
   db.exec('ALTER TABLE results ADD COLUMN answers TEXT');
 }
+// Test mode at the time the result was saved; NULL for results saved
+// before this was recorded.
+if (!resultsColumns.includes('mode')) {
+  db.exec('ALTER TABLE results ADD COLUMN mode TEXT');
+}
 
 function normalizeEmail(email) {
   return email.trim().toLowerCase();
@@ -208,11 +213,11 @@ function deleteSession(token) {
 
 db.prepare(`DELETE FROM sessions WHERE expires_at <= datetime('now')`).run();
 
-function saveResult({ userId, testId, score, total, answers }) {
+function saveResult({ userId, testId, score, total, answers, mode }) {
   const stmt = db.prepare(
-    'INSERT INTO results (user_id, test_id, score, total, answers) VALUES (?, ?, ?, ?, ?)'
+    'INSERT INTO results (user_id, test_id, score, total, answers, mode) VALUES (?, ?, ?, ?, ?, ?)'
   );
-  const info = stmt.run(userId, testId, score, total, answers ? JSON.stringify(answers) : null);
+  const info = stmt.run(userId, testId, score, total, answers ? JSON.stringify(answers) : null, mode || null);
   return info.lastInsertRowid;
 }
 
@@ -281,7 +286,8 @@ function setReviewEnabled(testId, enabled) {
 function getAllResults() {
   return db
     .prepare(
-      `SELECT r.id AS id, u.name AS name, r.test_id AS testId, r.score AS score, r.total AS total, r.created_at AS createdAt
+      `SELECT r.id AS id, u.name AS name, r.test_id AS testId, r.score AS score, r.total AS total,
+              r.mode AS mode, r.created_at AS createdAt
        FROM results r
        JOIN users u ON u.id = r.user_id
        ORDER BY r.created_at DESC`

@@ -462,3 +462,45 @@ button.prev:active{transform:scale(0.97);}
 .field-row{display:flex;gap:10px;flex-wrap:wrap;}
 .field-row .field{min-width:160px;}
 .btn-block{height:44px;width:100%;}
+
+/* Admin results page */
+.btn-link{
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:6px;
+  padding:4px 9px;
+  font-size:0.75rem;
+  text-decoration:none;
+}
+.btn-link:hover{border-color:var(--blue);}
+.filter-bar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+.filter-bar .field{min-width:180px;}
+.filter-bar label{
+  font-size:0.72rem;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+select{
+  background:var(--panel2);
+  border:1px solid var(--border);
+  color:var(--text);
+  border-radius:9px;
+  padding:10px 12px;
+  font-size:0.9rem;
+  font-family:inherit;
+}
+select:focus{outline:none;border-color:var(--blue);}
+#resultsCount{margin:0 0 10px;}
+.mode-badge{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.7rem;
+  padding:2px 6px;
+  border-radius:4px;
+  border:1px solid var(--border);
+  white-space:nowrap;
+}
+.mode-badge.exam{color:var(--error);border-color:var(--error);background:rgba(232,99,107,0.1);}
+.mode-badge.learn{color:var(--blue);border-color:var(--blue);background:rgba(91,155,213,0.1);}
+.mode-badge.unknown{color:var(--muted);}
+.grade-whole{font-weight:700;color:var(--accent);}

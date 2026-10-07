@@ -60,7 +60,12 @@ sarakstu kā meklējamu lauku, nevis pogas. Skat. `data/elektrika.json` un
 
 `/admin` — aizsargāts ar paroli no vides mainīgā `ADMIN_PASSWORD`. Tur var:
 
-- redzēt visu dalībnieku rezultātus (vārds, tests, datums, rezultāts);
+- atvērt atsevišķu rezultātu lapu `/admin/rezultati` ar visu dalībnieku
+  rezultātiem (vārds, tests, režīms, datums, rezultāts, atzīme) un filtriem pēc
+  testa un režīma. Atzīme ir lineāra 10 ballu skalā (rezultāts / maksimums × 10),
+  rādīta ar vienu zīmi aiz komata un noapaļota līdz veselam. Režīms tiek
+  saglabāts katram rezultātam iesniegšanas brīdī; rezultātiem, kas saglabāti
+  pirms tā ieviešanas, režīms nav zināms;
 - labot dalībnieka vārdu un uzvārdu un iestatīt jaunu paroli ("Dalībnieki"
   sadaļā);
 - katram testam ieslēgt/izslēgt pieejamību (izslēgts tests pazūd no publiskā

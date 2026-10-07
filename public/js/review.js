@@ -10,6 +10,14 @@ try {
   if (sessionStorage.getItem('dt_admin_pw')) adminBackLink.hidden = false;
 } catch { /* ignore */ }
 
+// Coming from the results list: go back to it with its filters intact.
+try {
+  const ref = new URL(document.referrer);
+  if (ref.origin === location.origin && ref.pathname === '/admin/rezultati') {
+    adminBackLink.href = ref.pathname + ref.search;
+  }
+} catch { /* no referrer */ }
+
 const letters = ['A', 'B', 'C', 'D'];
 
 function renderQuestionCard(item, index) {

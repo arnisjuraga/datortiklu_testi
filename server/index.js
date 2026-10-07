@@ -220,7 +220,7 @@ app.post('/api/results', requireUser, (req, res) => {
   if (!test) return res.status(404).json({ error: 'Tests nav atrasts.' });
   if (!test.enabled) return res.status(403).json({ error: 'Šis tests pašlaik nav pieejams.' });
 
-  const resultId = db.saveResult({ userId: req.user.id, testId, score, total, answers });
+  const resultId = db.saveResult({ userId: req.user.id, testId, score, total, answers, mode: test.mode });
   res.json({ ok: true, resultId });
 });
 
@@ -369,6 +369,10 @@ app.get('/testi/:testId', (req, res) => {
 
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
+});
+
+app.get('/admin/rezultati', (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'admin-results.html'));
 });
 
 app.get('/rezultati/:resultId', (req, res) => {
