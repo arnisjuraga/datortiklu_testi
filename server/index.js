@@ -5,6 +5,9 @@ try { require('dotenv').config(); } catch { /* dotenv optional */ }
 const db = require('./db');
 
 const app = express();
+// Behind nginx reverse proxy: trust exactly one hop (nginx), so req.ip is the
+// address nginx saw and can't be spoofed via a client-sent X-Forwarded-For.
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const DATA_DIR = path.join(__dirname, '..', 'data');
