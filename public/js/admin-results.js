@@ -1,3 +1,4 @@
+const userFilter = document.getElementById('userFilter');
 const testFilter = document.getElementById('testFilter');
 const modeFilter = document.getElementById('modeFilter');
 const latestOnly = document.getElementById('latestOnly');
@@ -33,16 +34,19 @@ function modeBadge(mode) {
 // review page, keeps them.
 function readFiltersFromUrl() {
   const params = new URLSearchParams(location.search);
+  userFilter.value = params.get('dalibnieks') || '';
   testFilter.value = params.get('tests') || '';
   modeFilter.value = params.get('rezims') || '';
   latestOnly.checked = params.get('pedejie') === '1';
   // Unknown value in the URL (e.g. removed test) → fall back to "all".
+  if (userFilter.selectedIndex === -1) userFilter.value = '';
   if (testFilter.selectedIndex === -1) testFilter.value = '';
   if (modeFilter.selectedIndex === -1) modeFilter.value = '';
 }
 
 function writeFiltersToUrl() {
   const params = new URLSearchParams();
+  if (userFilter.value) params.set('dalibnieks', userFilter.value);
   if (testFilter.value) params.set('tests', testFilter.value);
   if (modeFilter.value) params.set('rezims', modeFilter.value);
   if (latestOnly.checked) params.set('pedejie', '1');
@@ -56,9 +60,11 @@ function formatDate(createdAt) {
 }
 
 function render() {
+  const userId = userFilter.value;
   const testId = testFilter.value;
   const mode = modeFilter.value;
   const rows = allResults.filter((r) => {
+    if (userId && String(r.userId) !== userId) return false;
     if (testId && r.testId !== testId) return false;
     if (mode === 'unknown') return !r.mode;
     if (mode && r.mode !== mode) return false;
@@ -123,6 +129,7 @@ function onFilterChange() {
   render();
 }
 
+userFilter.addEventListener('change', onFilterChange);
 testFilter.addEventListener('change', onFilterChange);
 modeFilter.addEventListener('change', onFilterChange);
 latestOnly.addEventListener('change', onFilterChange);
@@ -155,6 +162,16 @@ latestOnly.addEventListener('change', onFilterChange);
     opt.value = id;
     opt.textContent = title;
     testFilter.appendChild(opt);
+  });
+
+  // Student options: everyone who has results.
+  const people = new Map();
+  allResults.forEach((r) => people.set(r.userId, r.name));
+  [...people].sort((a, b) => a[1].localeCompare(b[1], 'lv', { sensitivity: 'base' })).forEach(([id, name]) => {
+    const opt = document.createElement('option');
+    opt.value = String(id);
+    opt.textContent = name;
+    userFilter.appendChild(opt);
   });
 
   readFiltersFromUrl();

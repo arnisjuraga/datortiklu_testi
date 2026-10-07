@@ -6,7 +6,7 @@
 <title>Rezultāti — Admin — Datortīklu testi</title>
 <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
+<body class="admin-page">
 <div class="wrap">
   <div class="head">
     <h1>Rezultāti</h1>
@@ -18,6 +18,12 @@
 
   <div class="card">
     <div class="filter-bar">
+      <div class="field">
+        <label for="userFilter">Dalībnieks</label>
+        <select id="userFilter">
+          <option value="">Visi dalībnieki</option>
+        </select>
+      </div>
       <div class="field">
         <label for="testFilter">Tests</label>
         <select id="testFilter">

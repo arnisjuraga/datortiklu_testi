@@ -62,7 +62,7 @@ sarakstu kā meklējamu lauku, nevis pogas. Skat. `data/elektrika.json` un
 
 - atvērt atsevišķu rezultātu lapu `/admin/rezultati` ar visu dalībnieku
   rezultātiem (vārds, tests, režīms, datums, rezultāts, atzīme) un filtriem pēc
-  testa un režīma. Atzīme ir lineāra 10 ballu skalā (rezultāts / maksimums × 10),
+  dalībnieka, testa un režīma. Atzīme ir lineāra 10 ballu skalā (rezultāts / maksimums × 10),
   rādīta ar vienu zīmi aiz komata un noapaļota līdz veselam. Režīms tiek
   saglabāts katram rezultātam iesniegšanas brīdī; rezultātiem, kas saglabāti
   pirms tā ieviešanas, režīms nav zināms. Rezultāti sagrupēti pa dalībniekiem;

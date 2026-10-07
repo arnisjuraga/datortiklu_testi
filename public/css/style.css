@@ -525,3 +525,6 @@ select:focus{outline:none;border-color:var(--blue);}
   margin-left:6px;
   white-space:nowrap;
 }
+
+/* Admin pages use a wider layout (results table has many columns). */
+.admin-page .wrap{max-width:1100px;}
