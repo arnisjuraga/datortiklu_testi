@@ -1,12 +1,19 @@
 const userFilter = document.getElementById('userFilter');
 const testFilter = document.getElementById('testFilter');
 const modeFilter = document.getElementById('modeFilter');
+const gradedFilter = document.getElementById('gradedFilter');
 const latestOnly = document.getElementById('latestOnly');
+const bulkGradeBtn = document.getElementById('bulkGradeBtn');
+const bulkCancelBtn = document.getElementById('bulkCancelBtn');
+const bulkErr = document.getElementById('bulkErr');
 const resultsTable = document.getElementById('resultsTable');
 const resultsEmpty = document.getElementById('resultsEmpty');
 const resultsCount = document.getElementById('resultsCount');
 
 let allResults = [];
+// Unmarked latest results currently on screen — what the bulk button marks.
+let bulkIds = [];
+let bulkArmed = false;
 
 function escapeHtml(v) {
   return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -37,11 +44,13 @@ function readFiltersFromUrl() {
   userFilter.value = params.get('dalibnieks') || '';
   testFilter.value = params.get('tests') || '';
   modeFilter.value = params.get('rezims') || '';
+  gradedFilter.value = params.get('zurnals') || '';
   latestOnly.checked = params.get('pedejie') === '1';
   // Unknown value in the URL (e.g. removed test) → fall back to "all".
   if (userFilter.selectedIndex === -1) userFilter.value = '';
   if (testFilter.selectedIndex === -1) testFilter.value = '';
   if (modeFilter.selectedIndex === -1) modeFilter.value = '';
+  if (gradedFilter.selectedIndex === -1) gradedFilter.value = '';
 }
 
 function writeFiltersToUrl() {
@@ -49,6 +58,7 @@ function writeFiltersToUrl() {
   if (userFilter.value) params.set('dalibnieks', userFilter.value);
   if (testFilter.value) params.set('tests', testFilter.value);
   if (modeFilter.value) params.set('rezims', modeFilter.value);
+  if (gradedFilter.value) params.set('zurnals', gradedFilter.value);
   if (latestOnly.checked) params.set('pedejie', '1');
   const qs = params.toString();
   history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
@@ -57,6 +67,24 @@ function writeFiltersToUrl() {
 function formatDate(createdAt) {
   const date = new Date(createdAt.replace(' ', 'T') + 'Z');
   return date.toLocaleString('lv-LV', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function formatDay(sqlDate) {
+  const date = new Date(sqlDate.replace(' ', 'T') + 'Z');
+  return date.toLocaleDateString('lv-LV', { day: 'numeric', month: 'short' });
+}
+
+async function setGraded(ids, graded) {
+  const { ok, status, data } = await adminPost('/api/admin/results/graded', { ids, graded });
+  if (status === 401) {
+    clearPw();
+    location.href = '/admin?next=' + encodeURIComponent(location.pathname + location.search);
+    return false;
+  }
+  if (!ok) return false;
+  const byId = new Map(data.results.map((r) => [r.id, r.gradedAt]));
+  allResults.forEach((r) => { if (byId.has(r.id)) r.gradedAt = byId.get(r.id); });
+  return true;
 }
 
 function render() {
@@ -84,23 +112,36 @@ function render() {
 
   resultsTable.querySelectorAll('tbody').forEach((tb) => tb.remove());
   let shown = 0;
+  let shownUsers = 0;
+  bulkIds = [];
   users.forEach((u) => {
     const tbody = document.createElement('tbody');
     tbody.className = 'user-group';
     const head = document.createElement('tr');
     head.className = 'user-head';
-    head.innerHTML = `<td colspan="7"><b>${escapeHtml(u.name)}</b>
+    head.innerHTML = `<td colspan="8"><b>${escapeHtml(u.name)}</b>
       <span class="hint mono">${u.email ? escapeHtml(u.email) : 'vecais lietotājs (bez konta)'}</span></td>`;
     tbody.appendChild(head);
 
-    const testGroups = [...u.tests.values()].sort((a, b) => a[0].testTitle.localeCompare(b[0].testTitle, 'lv'));
+    const testGroups = [...u.tests.values()]
+      .sort((a, b) => a[0].testTitle.localeCompare(b[0].testTitle, 'lv'))
+      .map((attempts) => attempts.sort((a, b) => (b.createdAt.localeCompare(a.createdAt)) || (b.id - a.id)))
+      // The grade-book status is judged on the latest attempt.
+      .filter((attempts) => {
+        if (gradedFilter.value === 'ne') return !attempts[0].gradedAt;
+        if (gradedFilter.value === 'ja') return !!attempts[0].gradedAt;
+        return true;
+      });
+    if (!testGroups.length) return;
+    shownUsers++;
+
     testGroups.forEach((attempts) => {
-      attempts.sort((a, b) => (b.createdAt.localeCompare(a.createdAt)) || (b.id - a.id));
+      if (!attempts[0].gradedAt) bulkIds.push(attempts[0].id);
       (latestOnly.checked ? attempts.slice(0, 1) : attempts).forEach((r, i) => {
         const isLatest = i === 0;
         const g = grade(r.score, r.total);
         const tr = document.createElement('tr');
-        if (isLatest) tr.className = 'latest';
+        tr.className = [isLatest ? 'latest' : '', r.gradedAt ? 'graded' : ''].join(' ').trim();
         tr.innerHTML = `
           <td>${escapeHtml(r.testTitle)}${isLatest ? ' <span class="latest-badge">PĒDĒJAIS</span>' : ''}
             ${r.legacyName ? `<div class="hint">kā „${escapeHtml(r.legacyName)}”</div>` : ''}</td>
@@ -109,8 +150,18 @@ function render() {
           <td class="mono">${r.score}/${r.total}</td>
           <td class="mono">${g.oneDecimal}</td>
           <td class="mono grade-whole">${g.whole}</td>
+          <td><label class="graded-check">
+            <input type="checkbox" ${r.gradedAt ? 'checked' : ''}>
+            <span class="mono">${r.gradedAt ? '✓ ' + formatDay(r.gradedAt) : ''}</span>
+          </label></td>
           <td><a class="hint" href="/rezultati/${r.id}">skatīt →</a></td>
         `;
+        const box = tr.querySelector('.graded-check input');
+        box.addEventListener('change', async () => {
+          box.disabled = true;
+          if (!(await setGraded([r.id], box.checked))) box.checked = !box.checked;
+          render();
+        });
         tbody.appendChild(tr);
         shown++;
       });
@@ -118,13 +169,44 @@ function render() {
     resultsTable.appendChild(tbody);
   });
 
-  resultsCount.textContent = `${users.length} dalībnieki · ${shown} rezultāti` +
-    (rows.length === allResults.length ? '' : ` (filtrēti no ${allResults.length})`);
-  resultsEmpty.hidden = users.length > 0;
+  resultsCount.textContent = `${shownUsers} dalībnieki · ${shown} rezultāti` +
+    (shown === allResults.length ? '' : ` (filtrēti no ${allResults.length})`);
+  resultsEmpty.hidden = shownUsers > 0;
+  renderBulk();
   resultsEmpty.textContent = allResults.length ? 'Nav rezultātu, kas atbilst filtram.' : 'Vēl nav neviena rezultāta.';
 }
 
+function renderBulk() {
+  bulkErr.textContent = '';
+  bulkCancelBtn.hidden = !bulkArmed;
+  bulkGradeBtn.disabled = bulkIds.length === 0;
+  bulkGradeBtn.classList.toggle('armed', bulkArmed);
+  bulkGradeBtn.textContent = bulkArmed
+    ? `APSTIPRINĀT: ATZĪMĒT ${bulkIds.length} KĀ IEVADĪTUS`
+    : `ATZĪMĒT REDZAMOS PĒDĒJOS KĀ IEVADĪTUS (${bulkIds.length})`;
+}
+
+bulkGradeBtn.addEventListener('click', async () => {
+  if (!bulkIds.length) return;
+  if (!bulkArmed) {
+    bulkArmed = true;
+    renderBulk();
+    return;
+  }
+  bulkGradeBtn.disabled = true;
+  const ok = await setGraded(bulkIds, true);
+  bulkArmed = false;
+  render();
+  if (!ok) bulkErr.textContent = 'Neizdevās saglabāt.';
+});
+
+bulkCancelBtn.addEventListener('click', () => {
+  bulkArmed = false;
+  renderBulk();
+});
+
 function onFilterChange() {
+  bulkArmed = false;
   writeFiltersToUrl();
   render();
 }
@@ -132,6 +214,7 @@ function onFilterChange() {
 userFilter.addEventListener('change', onFilterChange);
 testFilter.addEventListener('change', onFilterChange);
 modeFilter.addEventListener('change', onFilterChange);
+gradedFilter.addEventListener('change', onFilterChange);
 latestOnly.addEventListener('change', onFilterChange);
 
 (async function init() {

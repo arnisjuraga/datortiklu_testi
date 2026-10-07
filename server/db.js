@@ -96,6 +96,11 @@ if (!resultsColumns.includes('mode')) {
 if (!resultsColumns.includes('legacy_user_id')) {
   db.exec('ALTER TABLE results ADD COLUMN legacy_user_id INTEGER');
 }
+// When the admin marked the result's grade as entered into the external
+// grade book (NULL = not yet).
+if (!resultsColumns.includes('graded_at')) {
+  db.exec('ALTER TABLE results ADD COLUMN graded_at TEXT');
+}
 if (!db.prepare('PRAGMA table_info(users)').all().some((c) => c.name === 'merged_into')) {
   db.exec('ALTER TABLE users ADD COLUMN merged_into INTEGER');
 }
@@ -314,7 +319,7 @@ function getAllResults() {
     .prepare(
       `SELECT r.id AS id, r.user_id AS userId, u.name AS name, u.email AS email, r.test_id AS testId,
               r.score AS score, r.total AS total, r.mode AS mode, r.created_at AS createdAt,
-              lu.name AS legacyName
+              r.graded_at AS gradedAt, lu.name AS legacyName
        FROM results r
        JOIN users u ON u.id = r.user_id
        LEFT JOIN users lu ON lu.id = r.legacy_user_id
@@ -323,7 +328,17 @@ function getAllResults() {
     .all();
 }
 
+function setResultsGraded(ids, graded) {
+  const stmt = graded
+    ? db.prepare(`UPDATE results SET graded_at = COALESCE(graded_at, datetime('now')) WHERE id = ?`)
+    : db.prepare('UPDATE results SET graded_at = NULL WHERE id = ?');
+  db.transaction(() => ids.forEach((id) => stmt.run(id)))();
+  const ph = ids.map(() => '?').join(',');
+  return db.prepare(`SELECT id, graded_at AS gradedAt FROM results WHERE id IN (${ph})`).all(...ids);
+}
+
 module.exports = {
+  setResultsGraded,
   createAccount,
   emailExists,
   authenticate,

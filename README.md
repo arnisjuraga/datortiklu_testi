@@ -67,7 +67,10 @@ sarakstu kā meklējamu lauku, nevis pogas. Skat. `data/elektrika.json` un
   saglabāts katram rezultātam iesniegšanas brīdī; rezultātiem, kas saglabāti
   pirms tā ieviešanas, režīms nav zināms. Rezultāti sagrupēti pa dalībniekiem;
   katram testam jaunākais mēģinājums (ņemot vērā filtrus) iezīmēts kā
-  "PĒDĒJAIS", un var rādīt tikai tos;
+  "PĒDĒJAIS", un var rādīt tikai tos. Katru rezultātu var atzīmēt kā
+  "ievadītu žurnālā" (saglabājas datums), arī visus redzamos pēdējos uzreiz;
+  filtrs "Žurnālā" (neievadīti/ievadīti) skatās uz pēdējo mēģinājumu, tāpēc
+  pārkārtots tests atkal parādās kā neievadīts;
 - "Dalībnieki" sadaļā vecu lietotāju (tikai vārds, bez konta) ar "Pievienot
   kontam" piesaistīt dalībnieka kontam — visi viņa rezultāti pāriet uz kontu
   (oriģinālais lietotājs tiek atcerēts `results.legacy_user_id`). Konts tiek

@@ -528,3 +528,10 @@ select:focus{outline:none;border-color:var(--blue);}
 
 /* Admin pages use a wider layout (results table has many columns). */
 .admin-page .wrap{max-width:1100px;}
+.bulk-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px;}
+.bulk-bar .btn-link{background:transparent;cursor:pointer;padding:7px 12px;}
+.bulk-bar .btn-link:disabled{opacity:0.45;cursor:default;}
+.bulk-bar .btn-link.armed{border-color:var(--accent);color:var(--accent);}
+.graded-check{display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;font-size:0.78rem;color:var(--success);}
+.results-grouped tr.latest.graded td{background:rgba(87,204,138,0.07);}
+.results-grouped tr.latest.graded td:first-child{box-shadow:inset 3px 0 0 var(--success);}

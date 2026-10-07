@@ -362,6 +362,14 @@ app.post('/api/admin/users/:userId/password', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/admin/results/graded', requireAdmin, (req, res) => {
+  const { ids, graded } = req.body || {};
+  if (!Array.isArray(ids) || !ids.length || ids.length > 1000 || !ids.every(Number.isInteger) || typeof graded !== 'boolean') {
+    return res.status(400).json({ error: 'Nederīgi dati.' });
+  }
+  res.json({ ok: true, results: db.setResultsGraded(ids, graded) });
+});
+
 app.get('/api/admin/results', requireAdmin, (req, res) => {
   const registry = loadTestRegistry();
   const titleById = Object.fromEntries(registry.map((t) => [t.id, t.title]));
