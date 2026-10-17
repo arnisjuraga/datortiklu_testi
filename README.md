@@ -77,6 +77,9 @@ sarakstu kā meklējamu lauku, nevis pogas. Skat. `data/elektrika.json` un
   ieteikts pēc vārda, bet izvēle jāapstiprina adminam;
 - labot dalībnieka vārdu un uzvārdu un iestatīt jaunu paroli ("Dalībnieki"
   sadaļā);
+- "Faili" sadaļā augšupielādēt vairākus failus uzreiz (izvēloties vai ievelkot;
+  līdz 10 MB katrs — robeža arī nginx `client_max_body_size`), tos lejupielādēt
+  un dzēst. Faili glabājas datu volumē (`uploads/`) un ir pieejami tikai adminam;
 - katram testam ieslēgt/izslēgt pieejamību (izslēgts tests pazūd no publiskā
   saraksta un vairs nav uzsākams, kamēr atkal netiek ieslēgts);
 - katram testam pārslēgt režīmu starp **Mācīšanās** un **Kontroldarbs**:

@@ -7,6 +7,11 @@ const loginErr = document.getElementById('loginErr');
 const logoutBtn = document.getElementById('logoutBtn');
 const testModeList = document.getElementById('testModeList');
 const userList = document.getElementById('userList');
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const uploadStatus = document.getElementById('uploadStatus');
+const fileList = document.getElementById('fileList');
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 function renderTestModes(tests) {
   testModeList.innerHTML = '';
@@ -231,6 +236,119 @@ function renderUsers(users) {
   });
 }
 
+function formatSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function renderFiles(files) {
+  fileList.innerHTML = '';
+  if (!files.length) {
+    fileList.innerHTML = '<p class="empty">Vēl nav augšupielādētu failu.</p>';
+    return;
+  }
+  files.forEach((f) => {
+    const row = document.createElement('div');
+    row.className = 'test-item';
+    row.innerHTML = `
+      <div>
+        <h3 class="file-name" style="font-size:1rem;"></h3>
+        <p class="mono"></p>
+      </div>
+      <span style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button type="button" class="hint download-btn">Lejupielādēt</button>
+        <button type="button" class="hint delete-btn">Dzēst</button>
+      </span>
+    `;
+    row.querySelector('h3').textContent = f.name;
+    row.querySelector('p').textContent = `${formatSize(f.size)} · ${f.createdAt}`;
+
+    // Download goes through fetch so the admin password header is sent.
+    row.querySelector('.download-btn').addEventListener('click', async () => {
+      const res = await fetch(`/api/admin/attachments/${f.id}`, { headers: { 'x-admin-password': getPw() } });
+      if (!res.ok) {
+        alert('Neizdevās lejupielādēt failu.');
+        return;
+      }
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = f.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+
+    row.querySelector('.delete-btn').addEventListener('click', async () => {
+      if (!confirm(`Dzēst failu "${f.name}"?`)) return;
+      const { ok, data } = await adminPost(`/api/admin/attachments/${f.id}/delete`, {});
+      if (!ok) {
+        alert(data.error || 'Kļūda.');
+        return;
+      }
+      loadFiles();
+    });
+
+    fileList.appendChild(row);
+  });
+}
+
+async function loadFiles() {
+  const { ok, data } = await adminGet('/api/admin/attachments');
+  if (ok) renderFiles(data);
+}
+
+async function uploadOne(file) {
+  const res = await fetch('/api/admin/attachments', {
+    method: 'POST',
+    headers: {
+      'x-admin-password': getPw(),
+      'x-file-name': encodeURIComponent(file.name),
+      'Content-Type': file.type || 'application/octet-stream',
+    },
+    body: file,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 413 && !data.error) data.error = 'Fails ir pārāk liels.';
+  return { ok: res.ok, data };
+}
+
+// Files go up one at a time, each with its own status line.
+async function uploadFiles(files) {
+  if (!files.length) return;
+  uploadStatus.innerHTML = '';
+  for (const file of files) {
+    const line = document.createElement('div');
+    line.className = 'hint file-name';
+    line.textContent = `${file.name} — augšupielādē…`;
+    uploadStatus.appendChild(line);
+
+    let result;
+    if (file.size > MAX_FILE_BYTES) {
+      result = { ok: false, data: { error: `Fails ir lielāks par ${formatSize(MAX_FILE_BYTES)}.` } };
+    } else {
+      result = await uploadOne(file).catch(() => ({ ok: false, data: { error: 'Tīkla kļūda.' } }));
+    }
+    line.textContent = `${file.name} — ${result.ok ? 'augšupielādēts' : result.data.error || 'kļūda'}`;
+    line.classList.add(result.ok ? 'upload-ok' : 'upload-err');
+  }
+  fileInput.value = '';
+  loadFiles();
+}
+
+fileInput.addEventListener('change', () => uploadFiles([...fileInput.files]));
+['dragenter', 'dragover'].forEach((ev) => dropZone.addEventListener(ev, (e) => {
+  e.preventDefault();
+  dropZone.classList.add('over');
+}));
+['dragleave', 'drop'].forEach((ev) => dropZone.addEventListener(ev, (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+}));
+dropZone.addEventListener('drop', (e) => uploadFiles([...e.dataTransfer.files]));
+
 async function loadAdminData() {
   const [testsRes, usersRes] = await Promise.all([
     adminGet('/api/admin/tests'),
@@ -245,6 +363,7 @@ async function loadAdminData() {
 
   if (testsRes.ok) renderTestModes(testsRes.data);
   if (usersRes.ok) renderUsers(usersRes.data);
+  loadFiles();
 }
 
 function showLogin(err) {

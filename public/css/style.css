@@ -535,3 +535,24 @@ select:focus{outline:none;border-color:var(--blue);}
 .graded-check{display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;font-size:0.78rem;color:var(--success);}
 .results-grouped tr.latest.graded td{background:rgba(87,204,138,0.07);}
 .results-grouped tr.latest.graded td:first-child{box-shadow:inset 3px 0 0 var(--success);}
+
+/* Admin file upload */
+.drop-zone{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  padding:22px 16px;
+  border:1px dashed var(--border);
+  border-radius:10px;
+  background:var(--panel2);
+  color:var(--muted);
+  font-size:0.82rem;
+  text-align:center;
+  cursor:pointer;
+  transition:border-color .15s;
+}
+.drop-zone:hover, .drop-zone.over{border-color:var(--blue);color:var(--text);}
+.file-name{word-break:break-all;}
+.upload-ok{color:var(--success);}
+.upload-err{color:var(--error);}

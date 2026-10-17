@@ -40,6 +40,15 @@ db.exec(`
     review_enabled INTEGER NOT NULL DEFAULT 0
   );
 
+  CREATE TABLE IF NOT EXISTS attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    original_name TEXT NOT NULL,
+    stored_name TEXT NOT NULL UNIQUE,
+    mime TEXT,
+    size INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   CREATE TABLE IF NOT EXISTS sessions (
     token_hash TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id),
@@ -337,7 +346,39 @@ function setResultsGraded(ids, graded) {
   return db.prepare(`SELECT id, graded_at AS gradedAt FROM results WHERE id IN (${ph})`).all(...ids);
 }
 
+// --- Admin attachments (file bytes live in DATA_DIR/uploads/<stored_name>) ---
+
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const ATTACHMENT_COLUMNS = 'id, original_name AS name, stored_name AS storedName, mime, size, created_at AS createdAt';
+
+function addAttachment({ name, mime, size }) {
+  const storedName = crypto.randomBytes(16).toString('hex');
+  const info = db
+    .prepare('INSERT INTO attachments (original_name, stored_name, mime, size) VALUES (?, ?, ?, ?)')
+    .run(name, storedName, mime || null, size);
+  return getAttachment(info.lastInsertRowid);
+}
+
+function getAttachment(id) {
+  return db.prepare(`SELECT ${ATTACHMENT_COLUMNS} FROM attachments WHERE id = ?`).get(id) || null;
+}
+
+function getAllAttachments() {
+  return db.prepare(`SELECT ${ATTACHMENT_COLUMNS} FROM attachments ORDER BY created_at DESC, id DESC`).all();
+}
+
+function deleteAttachment(id) {
+  return db.prepare('DELETE FROM attachments WHERE id = ?').run(id).changes > 0;
+}
+
 module.exports = {
+  UPLOAD_DIR,
+  addAttachment,
+  getAttachment,
+  getAllAttachments,
+  deleteAttachment,
   setResultsGraded,
   createAccount,
   emailExists,

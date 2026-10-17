@@ -12,7 +12,7 @@
     <h1>Administrēšana</h1>
     <span class="tag mono">Admin</span>
   </div>
-  <p class="sub">Testu režīmi un dalībnieki.</p>
+  <p class="sub">Testu režīmi, dalībnieki un faili.</p>
 
   <div id="loginCard" class="card">
     <form class="name-form" id="loginForm">
@@ -42,6 +42,17 @@
     <div class="card" style="margin-bottom:16px;">
       <div class="qmeta" style="margin-bottom:14px;"><span class="mono">DALĪBNIEKI</span></div>
       <div id="userList" class="test-list"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="qmeta" style="margin-bottom:14px;"><span class="mono">FAILI</span></div>
+      <label class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" multiple hidden>
+        <span class="mono">IZVĒLIES FAILUS VAI IEVELC TOS ŠEIT</span>
+        <span class="hint">Var vairākus uzreiz · līdz 10 MB katrs</span>
+      </label>
+      <div id="uploadStatus" class="test-list" style="margin:10px 0;"></div>
+      <div id="fileList" class="test-list"></div>
     </div>
   </div>
 

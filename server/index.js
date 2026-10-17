@@ -13,6 +13,9 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const VALID_MODES = ['macisanas', 'kontroldarbs'];
+// Per file; each file is uploaded in its own request, so this must not
+// exceed nginx's client_max_body_size for the site.
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
@@ -378,6 +381,76 @@ app.get('/api/admin/results', requireAdmin, (req, res) => {
     testTitle: titleById[r.testId] || r.testId,
   }));
   res.json(results);
+});
+
+// --- Admin attachments ---
+// One file per request: raw body, original name in the URI-encoded
+// x-file-name header. The browser sends several files one after another.
+
+function cleanFileName(raw) {
+  let name = '';
+  try { name = decodeURIComponent(raw || ''); } catch { /* bad encoding */ }
+  name = name.split(/[\\/]/).pop().replace(/[\u0000-\u001f\u007f]/g, '').trim();
+  return name.slice(0, 200);
+}
+
+app.get('/api/admin/attachments', requireAdmin, (req, res) => {
+  res.json(db.getAllAttachments().map(({ storedName, ...a }) => a));
+});
+
+app.post(
+  '/api/admin/attachments',
+  requireAdmin,
+  express.raw({ type: () => true, limit: MAX_ATTACHMENT_BYTES }),
+  (req, res) => {
+    const name = cleanFileName(req.header('x-file-name'));
+    if (!name) return res.status(400).json({ error: 'Nav norādīts faila nosaukums.' });
+    const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+    if (!body.length) return res.status(400).json({ error: 'Fails ir tukšs.' });
+
+    const mime = (req.header('content-type') || '').slice(0, 100);
+    const att = db.addAttachment({ name, mime, size: body.length });
+    try {
+      fs.writeFileSync(path.join(db.UPLOAD_DIR, att.storedName), body);
+    } catch (e) {
+      db.deleteAttachment(att.id);
+      throw e;
+    }
+    const { storedName, ...pub } = att;
+    res.json({ ok: true, attachment: pub });
+  }
+);
+
+app.get('/api/admin/attachments/:id', requireAdmin, (req, res) => {
+  const att = db.getAttachment(req.params.id);
+  if (!att) return res.status(404).json({ error: 'Fails nav atrasts.' });
+  const file = path.join(db.UPLOAD_DIR, att.storedName);
+  if (!fs.existsSync(file)) return res.status(404).json({ error: 'Fails nav atrasts.' });
+  // Always as a download, never rendered inline (no stored XSS via HTML/SVG).
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="${att.name.replace(/[^\x20-\x7e]|"/g, '_')}"; filename*=UTF-8''${encodeURIComponent(att.name)}`
+  );
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.sendFile(file, { cacheControl: false });
+});
+
+app.post('/api/admin/attachments/:id/delete', requireAdmin, (req, res) => {
+  const att = db.getAttachment(req.params.id);
+  if (!att) return res.status(404).json({ error: 'Fails nav atrasts.' });
+  db.deleteAttachment(att.id);
+  fs.rm(path.join(db.UPLOAD_DIR, att.storedName), { force: true }, () => {});
+  res.json({ ok: true });
+});
+
+// Body over the limit → readable JSON error instead of Express's HTML page.
+app.use('/api/admin/attachments', (err, req, res, next) => {
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: `Fails ir lielāks par ${MAX_ATTACHMENT_BYTES / 1024 / 1024} MB.` });
+  }
+  next(err);
 });
 
 // --- Pages (clean routes per test) ---
