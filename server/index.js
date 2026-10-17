@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const express = require('express');
 try { require('dotenv').config(); } catch { /* dotenv optional */ }
 const db = require('./db');
@@ -13,9 +14,6 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const VALID_MODES = ['macisanas', 'kontroldarbs'];
-// Per file; each file is uploaded in its own request, so this must not
-// exceed nginx's client_max_body_size for the site.
-const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 
 app.use(express.json());
 app.use(express.static(PUBLIC_DIR));
@@ -398,28 +396,42 @@ app.get('/api/admin/attachments', requireAdmin, (req, res) => {
   res.json(db.getAllAttachments().map(({ storedName, ...a }) => a));
 });
 
-app.post(
-  '/api/admin/attachments',
-  requireAdmin,
-  express.raw({ type: () => true, limit: MAX_ATTACHMENT_BYTES }),
-  (req, res) => {
-    const name = cleanFileName(req.header('x-file-name'));
-    if (!name) return res.status(400).json({ error: 'Nav norādīts faila nosaukums.' });
-    const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
-    if (!body.length) return res.status(400).json({ error: 'Fails ir tukšs.' });
+// No size limit: the body is streamed straight to disk, never buffered in
+// memory. The real MIME type comes in x-file-type; the request itself is
+// sent as application/octet-stream so express.json() never touches it.
+app.post('/api/admin/attachments', requireAdmin, (req, res) => {
+  const name = cleanFileName(req.header('x-file-name'));
+  if (!name) return res.status(400).json({ error: 'Nav norādīts faila nosaukums.' });
+  const mime = (req.header('x-file-type') || '').slice(0, 100);
 
-    const mime = (req.header('content-type') || '').slice(0, 100);
-    const att = db.addAttachment({ name, mime, size: body.length });
-    try {
-      fs.writeFileSync(path.join(db.UPLOAD_DIR, att.storedName), body);
-    } catch (e) {
-      db.deleteAttachment(att.id);
-      throw e;
-    }
-    const { storedName, ...pub } = att;
-    res.json({ ok: true, attachment: pub });
-  }
-);
+  const storedName = crypto.randomBytes(16).toString('hex');
+  const file = path.join(db.UPLOAD_DIR, storedName);
+  const out = fs.createWriteStream(file, { flags: 'wx' });
+  let size = 0;
+  let failed = false;
+  const fail = (status, error) => {
+    if (failed) return;
+    failed = true;
+    req.unpipe(out);
+    out.destroy();
+    fs.rm(file, { force: true }, () => {});
+    if (!res.headersSent) res.status(status).json({ error });
+  };
+
+  req.on('data', (chunk) => { size += chunk.length; });
+  req.on('aborted', () => fail(400, 'Augšupielāde pārtraukta.'));
+  out.on('error', (e) => {
+    console.error('Attachment write failed:', e);
+    fail(500, 'Neizdevās saglabāt failu.');
+  });
+  out.on('finish', () => {
+    if (failed) return;
+    if (!size) return fail(400, 'Fails ir tukšs.');
+    const { storedName: _, ...att } = db.addAttachment({ name, storedName, mime, size });
+    res.json({ ok: true, attachment: att });
+  });
+  req.pipe(out);
+});
 
 app.get('/api/admin/attachments/:id', requireAdmin, (req, res) => {
   const att = db.getAttachment(req.params.id);
@@ -443,14 +455,6 @@ app.post('/api/admin/attachments/:id/delete', requireAdmin, (req, res) => {
   db.deleteAttachment(att.id);
   fs.rm(path.join(db.UPLOAD_DIR, att.storedName), { force: true }, () => {});
   res.json({ ok: true });
-});
-
-// Body over the limit → readable JSON error instead of Express's HTML page.
-app.use('/api/admin/attachments', (err, req, res, next) => {
-  if (err.type === 'entity.too.large') {
-    return res.status(413).json({ error: `Fails ir lielāks par ${MAX_ATTACHMENT_BYTES / 1024 / 1024} MB.` });
-  }
-  next(err);
 });
 
 // --- Pages (clean routes per test) ---

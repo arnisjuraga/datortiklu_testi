@@ -353,8 +353,7 @@ if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const ATTACHMENT_COLUMNS = 'id, original_name AS name, stored_name AS storedName, mime, size, created_at AS createdAt';
 
-function addAttachment({ name, mime, size }) {
-  const storedName = crypto.randomBytes(16).toString('hex');
+function addAttachment({ name, storedName, mime, size }) {
   const info = db
     .prepare('INSERT INTO attachments (original_name, stored_name, mime, size) VALUES (?, ?, ?, ?)')
     .run(name, storedName, mime || null, size);

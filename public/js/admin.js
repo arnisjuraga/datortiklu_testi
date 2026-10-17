@@ -11,7 +11,6 @@ const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const uploadStatus = document.getElementById('uploadStatus');
 const fileList = document.getElementById('fileList');
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 function renderTestModes(tests) {
   testModeList.innerHTML = '';
@@ -306,12 +305,12 @@ async function uploadOne(file) {
     headers: {
       'x-admin-password': getPw(),
       'x-file-name': encodeURIComponent(file.name),
-      'Content-Type': file.type || 'application/octet-stream',
+      'x-file-type': file.type,
+      'Content-Type': 'application/octet-stream',
     },
     body: file,
   });
   const data = await res.json().catch(() => ({}));
-  if (res.status === 413 && !data.error) data.error = 'Fails ir pārāk liels.';
   return { ok: res.ok, data };
 }
 
@@ -325,12 +324,7 @@ async function uploadFiles(files) {
     line.textContent = `${file.name} — augšupielādē…`;
     uploadStatus.appendChild(line);
 
-    let result;
-    if (file.size > MAX_FILE_BYTES) {
-      result = { ok: false, data: { error: `Fails ir lielāks par ${formatSize(MAX_FILE_BYTES)}.` } };
-    } else {
-      result = await uploadOne(file).catch(() => ({ ok: false, data: { error: 'Tīkla kļūda.' } }));
-    }
+    const result = await uploadOne(file).catch(() => ({ ok: false, data: { error: 'Tīkla kļūda.' } }));
     line.textContent = `${file.name} — ${result.ok ? 'augšupielādēts' : result.data.error || 'kļūda'}`;
     line.classList.add(result.ok ? 'upload-ok' : 'upload-err');
   }
