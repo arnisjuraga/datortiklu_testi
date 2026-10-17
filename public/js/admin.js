@@ -9,6 +9,8 @@ const testModeList = document.getElementById('testModeList');
 const userList = document.getElementById('userList');
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
+const folderInput = document.getElementById('folderInput');
+const folderBtn = document.getElementById('folderBtn');
 const uploadStatus = document.getElementById('uploadStatus');
 const fileList = document.getElementById('fileList');
 
@@ -273,7 +275,7 @@ function renderFiles(files) {
       const url = URL.createObjectURL(await res.blob());
       const a = document.createElement('a');
       a.href = url;
-      a.download = f.name;
+      a.download = f.name.split('/').pop();
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -299,12 +301,13 @@ async function loadFiles() {
   if (ok) renderFiles(data);
 }
 
-async function uploadOne(file) {
+// Each item is { file, path }; path includes the folder for folder uploads.
+async function uploadOne({ file, path }) {
   const res = await fetch('/api/admin/attachments', {
     method: 'POST',
     headers: {
       'x-admin-password': getPw(),
-      'x-file-name': encodeURIComponent(file.name),
+      'x-file-name': encodeURIComponent(path),
       'x-file-type': file.type,
       'Content-Type': 'application/octet-stream',
     },
@@ -315,24 +318,61 @@ async function uploadOne(file) {
 }
 
 // Files go up one at a time, each with its own status line.
-async function uploadFiles(files) {
-  if (!files.length) return;
+async function uploadFiles(items) {
   uploadStatus.innerHTML = '';
-  for (const file of files) {
+  if (!items.length) {
+    uploadStatus.innerHTML = '<p class="empty">Nav atrasts neviens fails.</p>';
+    return;
+  }
+  for (const item of items) {
     const line = document.createElement('div');
     line.className = 'hint file-name';
-    line.textContent = `${file.name} — augšupielādē…`;
+    line.textContent = `${item.path} — augšupielādē…`;
     uploadStatus.appendChild(line);
 
-    const result = await uploadOne(file).catch(() => ({ ok: false, data: { error: 'Tīkla kļūda.' } }));
-    line.textContent = `${file.name} — ${result.ok ? 'augšupielādēts' : result.data.error || 'kļūda'}`;
+    const result = await uploadOne(item).catch(() => ({ ok: false, data: { error: 'Tīkla kļūda.' } }));
+    line.textContent = `${item.path} — ${result.ok ? 'augšupielādēts' : result.data.error || 'kļūda'}`;
     line.classList.add(result.ok ? 'upload-ok' : 'upload-err');
   }
   fileInput.value = '';
+  folderInput.value = '';
   loadFiles();
 }
 
-fileInput.addEventListener('change', () => uploadFiles([...fileInput.files]));
+// Walks a dropped folder (FileSystemEntry API) and returns all files in it,
+// subfolders included, with their path relative to the dropped item.
+async function entryFiles(entry) {
+  if (entry.isFile) {
+    const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+    return [{ file, path: entry.fullPath.replace(/^\//, '') }];
+  }
+  const reader = entry.createReader();
+  const children = [];
+  // readEntries returns results in batches; keep reading until empty.
+  for (;;) {
+    const batch = await new Promise((resolve, reject) => reader.readEntries(resolve, reject));
+    if (!batch.length) break;
+    children.push(...batch);
+  }
+  const nested = await Promise.all(children.map(entryFiles));
+  return nested.flat();
+}
+
+async function droppedItems(dataTransfer) {
+  // Entries must be taken synchronously, before the first await.
+  const entries = [...dataTransfer.items]
+    .map((i) => (i.webkitGetAsEntry ? i.webkitGetAsEntry() : null))
+    .filter(Boolean);
+  if (!entries.length) return [...dataTransfer.files].map((file) => ({ file, path: file.name }));
+  const nested = await Promise.all(entries.map((e) => entryFiles(e).catch(() => [])));
+  return nested.flat();
+}
+
+fileInput.addEventListener('change', () => uploadFiles([...fileInput.files].map((file) => ({ file, path: file.name }))));
+folderBtn.addEventListener('click', () => folderInput.click());
+folderInput.addEventListener('change', () => uploadFiles(
+  [...folderInput.files].map((file) => ({ file, path: file.webkitRelativePath || file.name }))
+));
 ['dragenter', 'dragover'].forEach((ev) => dropZone.addEventListener(ev, (e) => {
   e.preventDefault();
   dropZone.classList.add('over');
@@ -341,7 +381,7 @@ fileInput.addEventListener('change', () => uploadFiles([...fileInput.files]));
   e.preventDefault();
   dropZone.classList.remove('over');
 }));
-dropZone.addEventListener('drop', (e) => uploadFiles([...e.dataTransfer.files]));
+dropZone.addEventListener('drop', async (e) => uploadFiles(await droppedItems(e.dataTransfer)));
 
 async function loadAdminData() {
   const [testsRes, usersRes] = await Promise.all([

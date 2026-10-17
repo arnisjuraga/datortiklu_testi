@@ -385,11 +385,18 @@ app.get('/api/admin/results', requireAdmin, (req, res) => {
 // One file per request: raw body, original name in the URI-encoded
 // x-file-name header. The browser sends several files one after another.
 
+// Keeps a folder path from a folder upload ("Bildes/2026/foto.jpg"), but
+// only as a label: "." / ".." / empty segments are dropped, and the bytes
+// are always stored under a random name anyway.
 function cleanFileName(raw) {
   let name = '';
   try { name = decodeURIComponent(raw || ''); } catch { /* bad encoding */ }
-  name = name.split(/[\\/]/).pop().replace(/[\u0000-\u001f\u007f]/g, '').trim();
-  return name.slice(0, 200);
+  return name
+    .split(/[\\/]/)
+    .map((part) => part.replace(/[\u0000-\u001f\u007f]/g, '').trim())
+    .filter((part) => part && part !== '.' && part !== '..')
+    .join('/')
+    .slice(-500);
 }
 
 app.get('/api/admin/attachments', requireAdmin, (req, res) => {
@@ -441,9 +448,10 @@ app.get('/api/admin/attachments/:id', requireAdmin, (req, res) => {
   // Always as a download, never rendered inline (no stored XSS via HTML/SVG).
   res.setHeader('Content-Type', 'application/octet-stream');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  const base = att.name.split('/').pop();
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="${att.name.replace(/[^\x20-\x7e]|"/g, '_')}"; filename*=UTF-8''${encodeURIComponent(att.name)}`
+    `attachment; filename="${base.replace(/[^\x20-\x7e]|"/g, '_')}"; filename*=UTF-8''${encodeURIComponent(base)}`
   );
   res.setHeader('Cache-Control', 'private, no-store');
   res.sendFile(file, { cacheControl: false });

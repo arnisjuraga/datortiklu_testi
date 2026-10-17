@@ -49,8 +49,10 @@
       <label class="drop-zone" id="dropZone">
         <input type="file" id="fileInput" multiple hidden>
         <span class="mono">IZVĒLIES FAILUS VAI IEVELC TOS ŠEIT</span>
-        <span class="hint">Var vairākus uzreiz</span>
+        <span class="hint">Var vairākus failus vai veselas mapes uzreiz</span>
       </label>
+      <input type="file" id="folderInput" webkitdirectory multiple hidden>
+      <button type="button" class="hint" id="folderBtn" style="margin-top:10px;">Izvēlies mapi</button>
       <div id="uploadStatus" class="test-list" style="margin:10px 0;"></div>
       <div id="fileList" class="test-list"></div>
     </div>
