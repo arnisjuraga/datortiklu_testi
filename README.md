@@ -77,10 +77,6 @@ sarakstu kā meklējamu lauku, nevis pogas. Skat. `data/elektrika.json` un
   ieteikts pēc vārda, bet izvēle jāapstiprina adminam;
 - labot dalībnieka vārdu un uzvārdu un iestatīt jaunu paroli ("Dalībnieki"
   sadaļā);
-- "Faili" sadaļā augšupielādēt vairākus failus uzreiz (izvēloties vai ievelkot;
-  bez izmēra ierobežojuma — nginx `/api/admin/attachments` ir
-  `client_max_body_size 0`), tos lejupielādēt
-  un dzēst. Faili glabājas datu volumē (`uploads/`) un ir pieejami tikai adminam;
 - katram testam ieslēgt/izslēgt pieejamību (izslēgts tests pazūd no publiskā
   saraksta un vairs nav uzsākams, kamēr atkal netiek ieslēgts);
 - katram testam pārslēgt režīmu starp **Mācīšanās** un **Kontroldarbs**:
@@ -118,6 +114,17 @@ parādās sadaļa "Mani rezultāti" ar visiem viņa pašu mēģinājumiem un sai
 to apskati.
 
 Bez `ADMIN_PASSWORD` iestatīšanas admin panelis ir bloķēts.
+
+## Faili
+
+`/upload` — atsevišķa failu lapa ar savu paroli no vides mainīgā
+`UPLOAD_PASSWORD` (admin parole to neatver, un admin panelī faili nav
+redzami). Tur var augšupielādēt vairākus failus vai veselas mapes uzreiz
+(izvēloties vai ievelkot), tos lejupielādēt un dzēst. Izmēra ierobežojuma nav
+— nginx `/api/upload/files` ir `client_max_body_size 0`. Faili glabājas datu
+volumē (`uploads/`). Pēc 10 nepareizām parolēm 15 minūšu laikā no vienas IP
+piekļuve uz laiku tiek bloķēta. Bez `UPLOAD_PASSWORD` iestatīšanas lapa ir
+bloķēta.
 
 ## Lokāla izstrāde
 

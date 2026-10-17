@@ -11,6 +11,8 @@ const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+// Separate password for the /upload file page (admin password doesn't open it).
+const UPLOAD_PASSWORD = process.env.UPLOAD_PASSWORD || '';
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const VALID_MODES = ['macisanas', 'kontroldarbs'];
@@ -381,9 +383,29 @@ app.get('/api/admin/results', requireAdmin, (req, res) => {
   res.json(results);
 });
 
-// --- Admin attachments ---
-// One file per request: raw body, original name in the URI-encoded
-// x-file-name header. The browser sends several files one after another.
+// --- File upload page (/upload) ---
+// Own password in x-upload-password. One file per request: raw body,
+// original name in the URI-encoded x-file-name header. The browser sends
+// several files one after another.
+
+function requireUploader(req, res, next) {
+  if (!UPLOAD_PASSWORD) {
+    return res.status(500).json({ error: 'UPLOAD_PASSWORD nav konfigurēts serverī.' });
+  }
+  const key = `upload|${req.ip}`;
+  if (loginBlocked(key)) {
+    return res.status(429).json({ error: 'Pārāk daudz neveiksmīgu mēģinājumu. Pamēģini vēlāk.' });
+  }
+  if ((req.header('x-upload-password') || '') !== UPLOAD_PASSWORD) {
+    recordLoginFailure(key);
+    return res.status(401).json({ error: 'Nepareiza parole.' });
+  }
+  next();
+}
+
+app.post('/api/upload/login', requireUploader, (req, res) => {
+  res.json({ ok: true });
+});
 
 // Keeps a folder path from a folder upload ("Bildes/2026/foto.jpg"), but
 // only as a label: "." / ".." / empty segments are dropped, and the bytes
@@ -399,14 +421,14 @@ function cleanFileName(raw) {
     .slice(-500);
 }
 
-app.get('/api/admin/attachments', requireAdmin, (req, res) => {
+app.get('/api/upload/files', requireUploader, (req, res) => {
   res.json(db.getAllAttachments().map(({ storedName, ...a }) => a));
 });
 
 // No size limit: the body is streamed straight to disk, never buffered in
 // memory. The real MIME type comes in x-file-type; the request itself is
 // sent as application/octet-stream so express.json() never touches it.
-app.post('/api/admin/attachments', requireAdmin, (req, res) => {
+app.post('/api/upload/files', requireUploader, (req, res) => {
   const name = cleanFileName(req.header('x-file-name'));
   if (!name) return res.status(400).json({ error: 'Nav norādīts faila nosaukums.' });
   const mime = (req.header('x-file-type') || '').slice(0, 100);
@@ -440,7 +462,7 @@ app.post('/api/admin/attachments', requireAdmin, (req, res) => {
   req.pipe(out);
 });
 
-app.get('/api/admin/attachments/:id', requireAdmin, (req, res) => {
+app.get('/api/upload/files/:id', requireUploader, (req, res) => {
   const att = db.getAttachment(req.params.id);
   if (!att) return res.status(404).json({ error: 'Fails nav atrasts.' });
   const file = path.join(db.UPLOAD_DIR, att.storedName);
@@ -457,7 +479,7 @@ app.get('/api/admin/attachments/:id', requireAdmin, (req, res) => {
   res.sendFile(file, { cacheControl: false });
 });
 
-app.post('/api/admin/attachments/:id/delete', requireAdmin, (req, res) => {
+app.post('/api/upload/files/:id/delete', requireUploader, (req, res) => {
   const att = db.getAttachment(req.params.id);
   if (!att) return res.status(404).json({ error: 'Fails nav atrasts.' });
   db.deleteAttachment(att.id);
@@ -479,6 +501,10 @@ app.get('/admin/rezultati', (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'admin-results.html'));
 });
 
+app.get('/upload', (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'upload.html'));
+});
+
 app.get('/rezultati/:resultId', (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'review.html'));
 });
@@ -487,5 +513,8 @@ app.listen(PORT, () => {
   console.log(`Datortīklu testi darbojas uz porta ${PORT}`);
   if (!ADMIN_PASSWORD) {
     console.warn('BRĪDINĀJUMS: ADMIN_PASSWORD nav iestatīts — admin panelis ir bloķēts.');
+  }
+  if (!UPLOAD_PASSWORD) {
+    console.warn('BRĪDINĀJUMS: UPLOAD_PASSWORD nav iestatīts — /upload ir bloķēts.');
   }
 });

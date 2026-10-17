@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Faili — Datortīklu testi</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="admin-page">
+<div class="wrap">
+  <div class="head">
+    <h1>Faili</h1>
+    <span class="tag mono">Upload</span>
+  </div>
+  <p class="sub">Failu augšupielāde un apskate.</p>
+
+  <div id="loginCard" class="card">
+    <form class="name-form" id="loginForm">
+      <div>
+        <label for="pwInput">Parole</label>
+        <div class="name-row">
+          <input type="password" id="pwInput" autocomplete="current-password" required>
+          <button class="btn-primary" type="submit" id="loginBtn">Ieiet</button>
+        </div>
+      </div>
+      <div class="err-msg" id="loginErr"></div>
+    </form>
+  </div>
+
+  <div id="uploadBody" hidden>
+    <div class="whoami">
+      Sesija aktīva
+      <button id="logoutBtn" type="button" style="margin-left:auto;">Iziet</button>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="qmeta" style="margin-bottom:14px;"><span class="mono">FAILI</span></div>
+      <label class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" multiple hidden>
+        <span class="mono">IZVĒLIES FAILUS VAI IEVELC TOS ŠEIT</span>
+        <span class="hint">Var vairākus failus vai veselas mapes uzreiz</span>
+      </label>
+      <input type="file" id="folderInput" webkitdirectory multiple hidden>
+      <button type="button" class="hint" id="folderBtn" style="margin-top:10px;">Izvēlies mapi</button>
+      <div id="uploadStatus" class="test-list" style="margin:10px 0;"></div>
+      <div id="fileList" class="test-list"></div>
+    </div>
+  </div>
+
+  <footer class="note mono">DATORTIKLU_TESTI · ARNISJURAGA</footer>
+</div>
+
+<script src="/js/upload.js"></script>
+</body>
+</html>
