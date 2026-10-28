@@ -145,3 +145,23 @@ docker compose up -d --build
 
 Dati (SQLite datubāze) tiek glabāti Docker volumē `datortiklu-testi-data`,
 tāpēc paliek pāri konteinera pārbūvēm/pārstartēšanai.
+
+### Rezerves kopijas
+
+`scripts/backup-db.sh` izveido konsekventu `app.db` kopiju (SQLite online
+backup konteinerī) mapē `/home/www/espar.lv/t1/backups/app-auto-*.db` un dzēš
+automātiskās kopijas, kas vecākas par 30 dienām (manuālās kopijas netiek
+aiztiktas). Palaižams katru dienu ar `t1.espar.lv` lietotāja cron:
+
+```
+30 3 * * * /bin/sh /home/www/espar.lv/t1/public_html/scripts/backup-db.sh >> /home/www/espar.lv/t1/log/backup-db.log 2>&1
+```
+
+Augšupielādētie faili (`uploads/`) šajā kopijā neietilpst.
+
+### nginx
+
+`deploy/nginx/t1.espar.lv.conf` ir servera nginx konfigurācijas kopija
+(`/etc/nginx/sites-available/t1.espar.lv.conf`), ieskaitot
+`/api/upload/files` bez izmēra ierobežojuma. Mainot to serverī, atjauno arī šo
+kopiju.
