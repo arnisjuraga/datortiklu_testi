@@ -1,0 +1,187 @@
+[
+  {
+    "q": "Kura datu uzglabāšanas tehnoloģija piedāvā vislielāko teorētisko un praktisko datu ietilpību vienā ierīcē?",
+    "opts": ["Operatīvajā atmiņā (RAM)", "USB zibatmiņā", "Cietajā diskā", "Optiskajā diskā (DVD)"],
+    "a": 2
+  },
+  {
+    "q": "Kura no minētajām iekšējām atmiņām ir energoatkarīga?",
+    "opts": ["Brīvpiekļuves (RAM)", "Lasāmatmiņa (ROM)", "Zibatmiņa (Flash)", "Cietvielu disks (SSD)"],
+    "a": 0
+  },
+  {
+    "q": "Kura no minētajām iekārtām nav ievadiekārta?",
+    "opts": ["Tastatūra", "Pele", "Skeneris", "Austiņas"],
+    "a": 3
+  },
+  {
+    "q": "Kura no minētajām iekārtām nav izvadiekārta?",
+    "opts": ["Monitors", "Mikrofons", "Printeris", "Skaļruņi"],
+    "a": 1
+  },
+  {
+    "q": "Kāda ir printera loma mūsdienās un kādas ir tā galvenā darba funkcija?",
+    "opts": ["Ierīce, kas ievada attēlus datorā no papīra", "Ierīce, kas uzglabā dokumentus ilgtermiņā", "Ierīce, kas izvada informāciju uz papīra", "Ierīce, kas savieno datoru ar tīklu"],
+    "a": 2
+  },
+  {
+    "q": "Kura diska tips nepieļauj datu pārrakstīšanu pēc pirmreizējās ierakstīšanas?",
+    "opts": ["CD-ROM", "CD-RW", "DVD-RW", "SSD"],
+    "a": 0
+  },
+  {
+    "q": "Kura ir pati mazākā mērvienība, ko izmanto datoru atmiņas apjoma mērīšanai?",
+    "opts": ["Baits", "Kilobaits", "Bits", "Megabaits"],
+    "a": 2
+  },
+  {
+    "q": "Kura aparatūras kombinācija parasti kalpo kā galvenais rādītājs tam, cik ātri dators apstrādās datus un izpildīs uzdevumus?",
+    "opts": ["Monitors un videokarte", "RAM un CPU", "Barošanas bloks un korpuss", "Tastatūra un pele"],
+    "a": 1
+  },
+  {
+    "q": "Kāda ir lieldatora (mainframe) galvenā priekšrocība?",
+    "opts": ["Tas ir mazs un viegli pārnēsājams", "Tam nav nepieciešama elektroapgāde", "Tas ir lētākais datoru veids", "To var izmantot vairāki tūkstoši lietotāju vienlaicīgi"],
+    "a": 3
+  },
+  {
+    "q": "Kura datora komponente kalpo kā 'ligzda' vai pamatne centrālajam procesoram?",
+    "opts": ["Barošanas blokā", "Sistēmblokā, uz pamatplates", "Monitorā, aiz ekrāna", "Videokartē"],
+    "a": 1
+  },
+  {
+    "q": "Kura datora sastāvdaļa veic vizuālo datu apstrādi un to pārvēršanu signālā, ko saprot monitors?",
+    "opts": ["Skaņas karte", "Tīkla karte", "Barošanas bloks", "Videokarte"],
+    "a": 3
+  },
+  {
+    "q": "Kāds ir čipkopas (chipset) uzdevums mātesplatē?",
+    "opts": ["Pārvaldīt datu plūsmu starp CPU, atmiņu un ierīcēm", "Nodrošināt datora barošanu", "Atdzesēt procesoru", "Ilgtermiņā uzglabāt lietotāja failus"],
+    "a": 0
+  },
+  {
+    "q": "Kā sauc unikālo aparatūras identifikatoru, kas katrai tīkla saskarnei tiek piešķirts ražošanas procesā?",
+    "opts": ["IP adrese", "MAC adrese", "DNS nosaukums", "URL adrese"],
+    "a": 1
+  },
+  {
+    "q": "Kura tīkla karte atbalsta IEEE 802.11 standartus?",
+    "opts": ["Ethernet karte", "Bluetooth adapteris", "Wi-Fi karte", "Optiskās šķiedras karte"],
+    "a": 2
+  },
+  {
+    "q": "Kādu pieslēgumvietas tipu (porta veidu) izmanto, lai personālajam datoram pieslēgtu projektoru?",
+    "opts": ["RJ45", "PS/2", "Audio 3,5 mm", "HDMI"],
+    "a": 3
+  },
+  {
+    "q": "Kura datora komponente izpilda programmu instrukcijas un veic aprēķinus?",
+    "opts": ["RAM", "Procesors (CPU)", "Barošanas bloks (PSU)", "Cietais disks"],
+    "a": 1
+  },
+  {
+    "q": "Kāda ir mātesplates (motherboard) galvenā funkcija?",
+    "opts": ["Glabāt datus arī pēc datora izslēgšanas", "Atdzesēt procesoru", "Savienot visas datora komponentes un nodrošināt saziņu starp tām", "Pārveidot maiņstrāvu līdzstrāvā"],
+    "a": 2
+  },
+  {
+    "q": "Kas notiek ar operatīvajā atmiņā (RAM) glabātajiem datiem, kad dators tiek izslēgts?",
+    "opts": ["Tie tiek izdzēsti", "Tie automātiski tiek pārkopēti uz procesoru", "Tie saglabājas līdz nākamajai ieslēgšanai", "Tie tiek saspiesti un saglabāti BIOS"],
+    "a": 0
+  },
+  {
+    "q": "Ko nozīmē saīsinājums \"GPU\"?",
+    "opts": ["General Power Unit", "Global Processing Utility", "Graphics Port Unit", "Graphics Processing Unit"],
+    "a": 3
+  },
+  {
+    "q": "Kāda ir barošanas bloka (PSU) galvenā funkcija?",
+    "opts": ["Uzglabāt elektroenerģiju strāvas pārtraukuma gadījumam", "Pārveidot tīkla maiņstrāvu (AC) datora komponentēm vajadzīgajā līdzstrāvā (DC)", "Regulēt procesora takts frekvenci", "Pievienot datoru internetam"],
+    "a": 1
+  },
+  {
+    "q": "Ar ko SSD disks galvenokārt atšķiras no klasiskā HDD cietā diska?",
+    "opts": ["SSD glabā datus zibatmiņā bez kustīgām daļām, tāpēc ir daudz ātrāks", "SSD izmanto rotējošus magnētiskus diskus", "SSD dati pazūd pēc datora izslēgšanas", "SSD var pievienot tikai ar USB kabeli"],
+    "a": 0
+  },
+  {
+    "q": "Kurā vienībā parasti norāda procesora takts frekvenci?",
+    "opts": ["GB (gigabaitos)", "W (vatos)", "GHz (gigahercos)", "RPM (apgriezienos minūtē)"],
+    "a": 2
+  },
+  {
+    "q": "Kam paredzēta termopasta, ko uzklāj starp procesoru un dzesētāju?",
+    "opts": ["Lai procesoru pielīmētu pie mātesplates", "Lai elektriski izolētu procesoru", "Lai samazinātu procesora energopatēriņu", "Lai aizpildītu mikroskopiskas spraugas un uzlabotu siltuma pārnesi"],
+    "a": 3
+  },
+  {
+    "q": "Ko nozīmē procesora \"kodolu\" (cores) skaits?",
+    "opts": ["Cik daudz RAM moduļu var pievienot", "Cik neatkarīgu apstrādes vienību ir procesorā, kas var strādāt paralēli", "Cik ventilatoru ir procesora dzesētājā", "Cik USB portu atbalsta procesors"],
+    "a": 1
+  },
+  {
+    "q": "Kas ir BIOS/UEFI?",
+    "opts": ["Mātesplates programmaparatūra, kas inicializē aparatūru un palaiž operētājsistēmu", "Operētājsistēmas veids", "Videokartes draiveris", "Datora korpusa standarts"],
+    "a": 0
+  },
+  {
+    "q": "Kurā mātesplates slotā parasti ievieto mūsdienīgu videokarti?",
+    "opts": ["DIMM", "SATA", "PCIe x16", "M.2"],
+    "a": 2
+  },
+  {
+    "q": "Ko apzīmē RAM moduļu tipi DDR4 un DDR5?",
+    "opts": ["Cieto disku savienojuma veidus", "Operatīvās atmiņas paaudzes, kas savā starpā nav savietojamas vienā slotā", "Videokaršu modeļus", "Barošanas bloku jaudas klases"],
+    "a": 1
+  },
+  {
+    "q": "Kāds savienotājs ir M.2 NVMe SSD diskam?",
+    "opts": ["Tas tiek pievienots ar SATA datu kabeli un Molex barošanu", "Tas tiek pievienots tikai caur USB", "Tas tiek pievienots IDE slotā", "Tas tiek ievietots tieši M.2 slotā uz mātesplates un izmanto PCIe joslas"],
+    "a": 3
+  },
+  {
+    "q": "Kurš no šiem ir ilgtermiņa datu glabāšanas ierīce (dati saglabājas arī bez strāvas)?",
+    "opts": ["RAM", "Procesora kešatmiņa", "SSD", "Procesora reģistri"],
+    "a": 2
+  },
+  {
+    "q": "Kas ir procesora kešatmiņa (cache)?",
+    "opts": ["Neliela, ļoti ātra atmiņa procesorā biežāk izmantotiem datiem", "Rezerves barošanas avots procesoram", "Diska nodalījums pagaidu failiem", "Videokartes atmiņa"],
+    "a": 0
+  },
+  {
+    "q": "Ko nozīmē procesora ligzda (socket), piemēram, AM5 vai LGA1700?",
+    "opts": ["Barošanas savienotāja veidu", "Fizisko savienojuma standartu starp procesoru un mātesplati — procesoram un plates ligzdai jāsakrīt", "Korpusa izmēru", "Procesora ventilatora izmēru"],
+    "a": 1
+  },
+  {
+    "q": "Kāds ir standarta pilna izmēra mātesplates formāts (form factor) galda datoriem?",
+    "opts": ["ATX", "SATA", "PCIe", "NVMe"],
+    "a": 0
+  },
+  {
+    "q": "Kura komponente ļauj datoram pieslēgties vadu lokālajam tīklam?",
+    "opts": ["Skaņas karte", "Tīkla karte (NIC) ar RJ45 portu", "Videokarte", "Barošanas bloks"],
+    "a": 1
+  },
+  {
+    "q": "Ko norāda barošanas bloka sertifikāts \"80 PLUS\" (Bronze, Gold, Platinum u.c.)?",
+    "opts": ["Maksimālo jaudu vatos", "Ventilatora apgriezienus", "Kabeļu skaitu", "Energoefektivitātes līmeni — cik maz enerģijas tiek zaudēts siltumā"],
+    "a": 3
+  },
+  {
+    "q": "Ko nozīmē HDD parametrs \"7200 RPM\"?",
+    "opts": ["Datu pārraides ātrumu megabitos", "Diska ietilpību", "Magnētisko disku griešanās ātrumu — apgriezienus minūtē", "Diska darba temperatūru"],
+    "a": 2
+  },
+  {
+    "q": "Kas ir VRAM?",
+    "opts": ["Videokartes atmiņa grafikas datu glabāšanai", "Virtuālā atmiņa uz cietā diska", "Mātesplates BIOS atmiņa", "Barošanas bloka kondensatori"],
+    "a": 0
+  },
+  {
+    "q": "Kāpēc RAM moduļus ieteicams ievietot pāros noteiktos slotos (dual channel)?",
+    "opts": ["Lai samazinātu energopatēriņu", "Lai dators varētu ieslēgties", "Lai palielinātu atmiņas joslas platumu un ātrdarbību", "Lai dubultotu atmiņas ietilpību bez papildu moduļiem"],
+    "a": 2
+  }
+]

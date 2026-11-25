@@ -11,5 +11,11 @@
     "description": "Vājstrāvas shēmu simboli — atpazīsti komponenti no attēla.",
     "file": "elektrika.json",
     "answerType": "dropdown"
+  },
+  {
+    "id": "datora-komponentes",
+    "title": "Datora komponentes",
+    "description": "Procesors, mātesplate, RAM, SSD/HDD, videokarte, barošanas bloks un to savienotāji.",
+    "file": "datora-komponentes.json"
   }
 ]
