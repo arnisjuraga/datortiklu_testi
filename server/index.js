@@ -1,12 +1,18 @@
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const express = require('express');
 try { require('dotenv').config(); } catch { /* dotenv optional */ }
 const db = require('./db');
 
 const app = express();
+// Behind nginx reverse proxy: trust exactly one hop (nginx), so req.ip is the
+// address nginx saw and can't be spoofed via a client-sent X-Forwarded-For.
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+// Separate password for the /upload file page (admin password doesn't open it).
+const UPLOAD_PASSWORD = process.env.UPLOAD_PASSWORD || '';
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const VALID_MODES = ['macisanas', 'kontroldarbs'];
@@ -217,7 +223,7 @@ app.post('/api/results', requireUser, (req, res) => {
   if (!test) return res.status(404).json({ error: 'Tests nav atrasts.' });
   if (!test.enabled) return res.status(403).json({ error: 'Šis tests pašlaik nav pieejams.' });
 
-  const resultId = db.saveResult({ userId: req.user.id, testId, score, total, answers });
+  const resultId = db.saveResult({ userId: req.user.id, testId, score, total, answers, mode: test.mode });
   res.json({ ok: true, resultId });
 });
 
@@ -338,6 +344,17 @@ app.post('/api/admin/users/:userId/rename', requireAdmin, (req, res) => {
   }
 });
 
+app.post('/api/admin/users/:userId/merge', requireAdmin, (req, res) => {
+  const accountId = Number(req.body?.accountId);
+  if (!Number.isInteger(accountId)) return res.status(400).json({ error: 'Jāizvēlas konts.' });
+  const result = db.mergeLegacyUser(Number(req.params.userId), accountId);
+  if (result.error === 'legacy') {
+    return res.status(400).json({ error: 'Pievienot kontam var tikai veco lietotāju (bez e-pasta).' });
+  }
+  if (result.error === 'account') return res.status(400).json({ error: 'Izvēlētais konts nav atrasts.' });
+  res.json({ ok: true, moved: result.moved });
+});
+
 app.post('/api/admin/users/:userId/password', requireAdmin, (req, res) => {
   const password = req.body?.password;
   const err = validatePassword(password);
@@ -346,6 +363,14 @@ app.post('/api/admin/users/:userId/password', requireAdmin, (req, res) => {
     return res.status(404).json({ error: 'Kontam nav e-pasta (vecais lietotājs) vai tas nav atrasts.' });
   }
   res.json({ ok: true });
+});
+
+app.post('/api/admin/results/graded', requireAdmin, (req, res) => {
+  const { ids, graded } = req.body || {};
+  if (!Array.isArray(ids) || !ids.length || ids.length > 1000 || !ids.every(Number.isInteger) || typeof graded !== 'boolean') {
+    return res.status(400).json({ error: 'Nederīgi dati.' });
+  }
+  res.json({ ok: true, results: db.setResultsGraded(ids, graded) });
 });
 
 app.get('/api/admin/results', requireAdmin, (req, res) => {
@@ -358,6 +383,110 @@ app.get('/api/admin/results', requireAdmin, (req, res) => {
   res.json(results);
 });
 
+// --- File upload page (/upload) ---
+// Own password in x-upload-password. One file per request: raw body,
+// original name in the URI-encoded x-file-name header. The browser sends
+// several files one after another.
+
+function requireUploader(req, res, next) {
+  if (!UPLOAD_PASSWORD) {
+    return res.status(500).json({ error: 'UPLOAD_PASSWORD nav konfigurēts serverī.' });
+  }
+  const key = `upload|${req.ip}`;
+  if (loginBlocked(key)) {
+    return res.status(429).json({ error: 'Pārāk daudz neveiksmīgu mēģinājumu. Pamēģini vēlāk.' });
+  }
+  if ((req.header('x-upload-password') || '') !== UPLOAD_PASSWORD) {
+    recordLoginFailure(key);
+    return res.status(401).json({ error: 'Nepareiza parole.' });
+  }
+  next();
+}
+
+app.post('/api/upload/login', requireUploader, (req, res) => {
+  res.json({ ok: true });
+});
+
+// Keeps a folder path from a folder upload ("Bildes/2026/foto.jpg"), but
+// only as a label: "." / ".." / empty segments are dropped, and the bytes
+// are always stored under a random name anyway.
+function cleanFileName(raw) {
+  let name = '';
+  try { name = decodeURIComponent(raw || ''); } catch { /* bad encoding */ }
+  return name
+    .split(/[\\/]/)
+    .map((part) => part.replace(/[\u0000-\u001f\u007f]/g, '').trim())
+    .filter((part) => part && part !== '.' && part !== '..')
+    .join('/')
+    .slice(-500);
+}
+
+app.get('/api/upload/files', requireUploader, (req, res) => {
+  res.json(db.getAllAttachments().map(({ storedName, ...a }) => a));
+});
+
+// No size limit: the body is streamed straight to disk, never buffered in
+// memory. The real MIME type comes in x-file-type; the request itself is
+// sent as application/octet-stream so express.json() never touches it.
+app.post('/api/upload/files', requireUploader, (req, res) => {
+  const name = cleanFileName(req.header('x-file-name'));
+  if (!name) return res.status(400).json({ error: 'Nav norādīts faila nosaukums.' });
+  const mime = (req.header('x-file-type') || '').slice(0, 100);
+
+  const storedName = crypto.randomBytes(16).toString('hex');
+  const file = path.join(db.UPLOAD_DIR, storedName);
+  const out = fs.createWriteStream(file, { flags: 'wx' });
+  let size = 0;
+  let failed = false;
+  const fail = (status, error) => {
+    if (failed) return;
+    failed = true;
+    req.unpipe(out);
+    out.destroy();
+    fs.rm(file, { force: true }, () => {});
+    if (!res.headersSent) res.status(status).json({ error });
+  };
+
+  req.on('data', (chunk) => { size += chunk.length; });
+  req.on('aborted', () => fail(400, 'Augšupielāde pārtraukta.'));
+  out.on('error', (e) => {
+    console.error('Attachment write failed:', e);
+    fail(500, 'Neizdevās saglabāt failu.');
+  });
+  out.on('finish', () => {
+    if (failed) return;
+    if (!size) return fail(400, 'Fails ir tukšs.');
+    const { storedName: _, ...att } = db.addAttachment({ name, storedName, mime, size });
+    res.json({ ok: true, attachment: att });
+  });
+  req.pipe(out);
+});
+
+app.get('/api/upload/files/:id', requireUploader, (req, res) => {
+  const att = db.getAttachment(req.params.id);
+  if (!att) return res.status(404).json({ error: 'Fails nav atrasts.' });
+  const file = path.join(db.UPLOAD_DIR, att.storedName);
+  if (!fs.existsSync(file)) return res.status(404).json({ error: 'Fails nav atrasts.' });
+  // Always as a download, never rendered inline (no stored XSS via HTML/SVG).
+  res.setHeader('Content-Type', 'application/octet-stream');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  const base = att.name.split('/').pop();
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="${base.replace(/[^\x20-\x7e]|"/g, '_')}"; filename*=UTF-8''${encodeURIComponent(base)}`
+  );
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.sendFile(file, { cacheControl: false });
+});
+
+app.post('/api/upload/files/:id/delete', requireUploader, (req, res) => {
+  const att = db.getAttachment(req.params.id);
+  if (!att) return res.status(404).json({ error: 'Fails nav atrasts.' });
+  db.deleteAttachment(att.id);
+  fs.rm(path.join(db.UPLOAD_DIR, att.storedName), { force: true }, () => {});
+  res.json({ ok: true });
+});
+
 // --- Pages (clean routes per test) ---
 
 app.get('/testi/:testId', (req, res) => {
@@ -368,6 +497,14 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
 });
 
+app.get('/admin/rezultati', (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'admin-results.html'));
+});
+
+app.get('/upload', (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'upload.html'));
+});
+
 app.get('/rezultati/:resultId', (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'review.html'));
 });
@@ -376,5 +513,8 @@ app.listen(PORT, () => {
   console.log(`Datortīklu testi darbojas uz porta ${PORT}`);
   if (!ADMIN_PASSWORD) {
     console.warn('BRĪDINĀJUMS: ADMIN_PASSWORD nav iestatīts — admin panelis ir bloķēts.');
+  }
+  if (!UPLOAD_PASSWORD) {
+    console.warn('BRĪDINĀJUMS: UPLOAD_PASSWORD nav iestatīts — /upload ir bloķēts.');
   }
 });

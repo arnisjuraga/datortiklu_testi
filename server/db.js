@@ -40,6 +40,15 @@ db.exec(`
     review_enabled INTEGER NOT NULL DEFAULT 0
   );
 
+  CREATE TABLE IF NOT EXISTS attachments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    original_name TEXT NOT NULL,
+    stored_name TEXT NOT NULL UNIQUE,
+    mime TEXT,
+    size INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   CREATE TABLE IF NOT EXISTS sessions (
     token_hash TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id),
@@ -84,6 +93,25 @@ if (!testSettingsColumns.includes('review_enabled')) {
 const resultsColumns = db.prepare('PRAGMA table_info(results)').all().map((c) => c.name);
 if (!resultsColumns.includes('answers')) {
   db.exec('ALTER TABLE results ADD COLUMN answers TEXT');
+}
+// Test mode at the time the result was saved; NULL for results saved
+// before this was recorded.
+if (!resultsColumns.includes('mode')) {
+  db.exec('ALTER TABLE results ADD COLUMN mode TEXT');
+}
+// Set when an admin attaches a legacy (name-only) user to an account:
+// results.legacy_user_id remembers who the result originally belonged to,
+// users.merged_into marks the legacy user as absorbed.
+if (!resultsColumns.includes('legacy_user_id')) {
+  db.exec('ALTER TABLE results ADD COLUMN legacy_user_id INTEGER');
+}
+// When the admin marked the result's grade as entered into the external
+// grade book (NULL = not yet).
+if (!resultsColumns.includes('graded_at')) {
+  db.exec('ALTER TABLE results ADD COLUMN graded_at TEXT');
+}
+if (!db.prepare('PRAGMA table_info(users)').all().some((c) => c.name === 'merged_into')) {
+  db.exec('ALTER TABLE users ADD COLUMN merged_into INTEGER');
 }
 
 function normalizeEmail(email) {
@@ -141,8 +169,9 @@ function getUserById(id) {
 function getAllUsers() {
   return db
     .prepare(
-      `SELECT id, name, first_name AS firstName, last_name AS lastName, email, created_at AS createdAt
-       FROM users ORDER BY name COLLATE NOCASE`
+      `SELECT u.id, u.name, u.first_name AS firstName, u.last_name AS lastName, u.email, u.created_at AS createdAt,
+              (SELECT COUNT(*) FROM results r WHERE r.user_id = u.id) AS resultCount
+       FROM users u WHERE u.merged_into IS NULL ORDER BY u.name COLLATE NOCASE`
     )
     .all();
 }
@@ -166,6 +195,22 @@ function renameUser(id, { name, firstName, lastName }) {
     db.prepare('UPDATE users SET name = ?, name_key = ? WHERE id = ?').run(name.trim(), key, id);
   }
   return publicUser(getUserById(id));
+}
+
+// Moves all results of a legacy (name-only) user to an account.
+function mergeLegacyUser(legacyId, accountId) {
+  const legacy = getUserById(legacyId);
+  const account = getUserById(accountId);
+  if (!legacy || legacy.email || legacy.merged_into) return { error: 'legacy' };
+  if (!account || !account.email) return { error: 'account' };
+  const moved = db.transaction(() => {
+    const info = db
+      .prepare('UPDATE results SET legacy_user_id = user_id, user_id = ? WHERE user_id = ?')
+      .run(account.id, legacy.id);
+    db.prepare('UPDATE users SET merged_into = ? WHERE id = ?').run(account.id, legacy.id);
+    return info.changes;
+  })();
+  return { moved };
 }
 
 function setPassword(id, password) {
@@ -208,11 +253,11 @@ function deleteSession(token) {
 
 db.prepare(`DELETE FROM sessions WHERE expires_at <= datetime('now')`).run();
 
-function saveResult({ userId, testId, score, total, answers }) {
+function saveResult({ userId, testId, score, total, answers, mode }) {
   const stmt = db.prepare(
-    'INSERT INTO results (user_id, test_id, score, total, answers) VALUES (?, ?, ?, ?, ?)'
+    'INSERT INTO results (user_id, test_id, score, total, answers, mode) VALUES (?, ?, ?, ?, ?, ?)'
   );
-  const info = stmt.run(userId, testId, score, total, answers ? JSON.stringify(answers) : null);
+  const info = stmt.run(userId, testId, score, total, answers ? JSON.stringify(answers) : null, mode || null);
   return info.lastInsertRowid;
 }
 
@@ -281,21 +326,66 @@ function setReviewEnabled(testId, enabled) {
 function getAllResults() {
   return db
     .prepare(
-      `SELECT r.id AS id, u.name AS name, r.test_id AS testId, r.score AS score, r.total AS total, r.created_at AS createdAt
+      `SELECT r.id AS id, r.user_id AS userId, u.name AS name, u.email AS email, r.test_id AS testId,
+              r.score AS score, r.total AS total, r.mode AS mode, r.created_at AS createdAt,
+              r.graded_at AS gradedAt, lu.name AS legacyName
        FROM results r
        JOIN users u ON u.id = r.user_id
+       LEFT JOIN users lu ON lu.id = r.legacy_user_id
        ORDER BY r.created_at DESC`
     )
     .all();
 }
 
+function setResultsGraded(ids, graded) {
+  const stmt = graded
+    ? db.prepare(`UPDATE results SET graded_at = COALESCE(graded_at, datetime('now')) WHERE id = ?`)
+    : db.prepare('UPDATE results SET graded_at = NULL WHERE id = ?');
+  db.transaction(() => ids.forEach((id) => stmt.run(id)))();
+  const ph = ids.map(() => '?').join(',');
+  return db.prepare(`SELECT id, graded_at AS gradedAt FROM results WHERE id IN (${ph})`).all(...ids);
+}
+
+// --- Admin attachments (file bytes live in DATA_DIR/uploads/<stored_name>) ---
+
+const UPLOAD_DIR = path.join(DATA_DIR, 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const ATTACHMENT_COLUMNS = 'id, original_name AS name, stored_name AS storedName, mime, size, created_at AS createdAt';
+
+function addAttachment({ name, storedName, mime, size }) {
+  const info = db
+    .prepare('INSERT INTO attachments (original_name, stored_name, mime, size) VALUES (?, ?, ?, ?)')
+    .run(name, storedName, mime || null, size);
+  return getAttachment(info.lastInsertRowid);
+}
+
+function getAttachment(id) {
+  return db.prepare(`SELECT ${ATTACHMENT_COLUMNS} FROM attachments WHERE id = ?`).get(id) || null;
+}
+
+function getAllAttachments() {
+  return db.prepare(`SELECT ${ATTACHMENT_COLUMNS} FROM attachments ORDER BY created_at DESC, id DESC`).all();
+}
+
+function deleteAttachment(id) {
+  return db.prepare('DELETE FROM attachments WHERE id = ?').run(id).changes > 0;
+}
+
 module.exports = {
+  UPLOAD_DIR,
+  addAttachment,
+  getAttachment,
+  getAllAttachments,
+  deleteAttachment,
+  setResultsGraded,
   createAccount,
   emailExists,
   authenticate,
   getAllUsers,
   renameUser,
   setPassword,
+  mergeLegacyUser,
   createSession,
   getSessionUser,
   deleteSession,

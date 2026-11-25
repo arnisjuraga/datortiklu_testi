@@ -60,7 +60,21 @@ sarakstu kā meklējamu lauku, nevis pogas. Skat. `data/elektrika.json` un
 
 `/admin` — aizsargāts ar paroli no vides mainīgā `ADMIN_PASSWORD`. Tur var:
 
-- redzēt visu dalībnieku rezultātus (vārds, tests, datums, rezultāts);
+- atvērt atsevišķu rezultātu lapu `/admin/rezultati` ar visu dalībnieku
+  rezultātiem (vārds, tests, režīms, datums, rezultāts, atzīme) un filtriem pēc
+  dalībnieka, testa un režīma. Atzīme ir lineāra 10 ballu skalā (rezultāts / maksimums × 10),
+  rādīta ar vienu zīmi aiz komata un noapaļota līdz veselam. Režīms tiek
+  saglabāts katram rezultātam iesniegšanas brīdī; rezultātiem, kas saglabāti
+  pirms tā ieviešanas, režīms nav zināms. Rezultāti sagrupēti pa dalībniekiem;
+  katram testam jaunākais mēģinājums (ņemot vērā filtrus) iezīmēts kā
+  "PĒDĒJAIS", un var rādīt tikai tos. Katru rezultātu var atzīmēt kā
+  "ievadītu žurnālā" (saglabājas datums), arī visus redzamos pēdējos uzreiz;
+  filtrs "Žurnālā" (neievadīti/ievadīti) skatās uz pēdējo mēģinājumu, tāpēc
+  pārkārtots tests atkal parādās kā neievadīts;
+- "Dalībnieki" sadaļā vecu lietotāju (tikai vārds, bez konta) ar "Pievienot
+  kontam" piesaistīt dalībnieka kontam — visi viņa rezultāti pāriet uz kontu
+  (oriģinālais lietotājs tiek atcerēts `results.legacy_user_id`). Konts tiek
+  ieteikts pēc vārda, bet izvēle jāapstiprina adminam;
 - labot dalībnieka vārdu un uzvārdu un iestatīt jaunu paroli ("Dalībnieki"
   sadaļā);
 - katram testam ieslēgt/izslēgt pieejamību (izslēgts tests pazūd no publiskā
@@ -101,6 +115,17 @@ to apskati.
 
 Bez `ADMIN_PASSWORD` iestatīšanas admin panelis ir bloķēts.
 
+## Faili
+
+`/upload` — atsevišķa failu lapa ar savu paroli no vides mainīgā
+`UPLOAD_PASSWORD` (admin parole to neatver, un admin panelī faili nav
+redzami). Tur var augšupielādēt vairākus failus vai veselas mapes uzreiz
+(izvēloties vai ievelkot), tos lejupielādēt un dzēst. Izmēra ierobežojuma nav
+— nginx `/api/upload/files` ir `client_max_body_size 0`. Faili glabājas datu
+volumē (`uploads/`). Pēc 10 nepareizām parolēm 15 minūšu laikā no vienas IP
+piekļuve uz laiku tiek bloķēta. Bez `UPLOAD_PASSWORD` iestatīšanas lapa ir
+bloķēta.
+
 ## Lokāla izstrāde
 
 ```bash
@@ -120,3 +145,23 @@ docker compose up -d --build
 
 Dati (SQLite datubāze) tiek glabāti Docker volumē `datortiklu-testi-data`,
 tāpēc paliek pāri konteinera pārbūvēm/pārstartēšanai.
+
+### Rezerves kopijas
+
+`scripts/backup-db.sh` izveido konsekventu `app.db` kopiju (SQLite online
+backup konteinerī) mapē `/home/www/espar.lv/t1/backups/app-auto-*.db` un dzēš
+automātiskās kopijas, kas vecākas par 30 dienām (manuālās kopijas netiek
+aiztiktas). Palaižams katru dienu ar `t1.espar.lv` lietotāja cron:
+
+```
+30 3 * * * /bin/sh /home/www/espar.lv/t1/public_html/scripts/backup-db.sh >> /home/www/espar.lv/t1/log/backup-db.log 2>&1
+```
+
+Augšupielādētie faili (`uploads/`) šajā kopijā neietilpst.
+
+### nginx
+
+`deploy/nginx/t1.espar.lv.conf` ir servera nginx konfigurācijas kopija
+(`/etc/nginx/sites-available/t1.espar.lv.conf`), ieskaitot
+`/api/upload/files` bez izmēra ierobežojuma. Mainot to serverī, atjauno arī šo
+kopiju.

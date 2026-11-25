@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rezultāti — Admin — Datortīklu testi</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="admin-page">
+<div class="wrap">
+  <div class="head">
+    <h1>Rezultāti</h1>
+    <span class="tag mono">Admin</span>
+  </div>
+  <div class="whoami">
+    <a href="/admin" class="hint">← admin panelis</a>
+  </div>
+
+  <div class="card">
+    <div class="filter-bar">
+      <div class="field">
+        <label for="userFilter">Dalībnieks</label>
+        <select id="userFilter">
+          <option value="">Visi dalībnieki</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="testFilter">Tests</label>
+        <select id="testFilter">
+          <option value="">Visi testi</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="modeFilter">Režīms</label>
+        <select id="modeFilter">
+          <option value="">Visi režīmi</option>
+          <option value="kontroldarbs">Kontroldarbs</option>
+          <option value="macisanas">Mācīšanās</option>
+          <option value="unknown">Nav zināms (vecie rezultāti)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="gradedFilter">Žurnālā</label>
+        <select id="gradedFilter">
+          <option value="">Visi</option>
+          <option value="ne">Neievadīti</option>
+          <option value="ja">Ievadīti</option>
+        </select>
+      </div>
+      <label class="check-inline">
+        <input type="checkbox" id="latestOnly">
+        Tikai pēdējais katram testam
+      </label>
+    </div>
+    <p class="hint mono" id="resultsCount"></p>
+    <p class="hint" style="margin:0 0 10px;">Atzīme = rezultāts / maksimums × 10 (lineāri, 10 ballu skala).
+      <span class="latest-badge">PĒDĒJAIS</span> = jaunākais mēģinājums šajā testā (ņemot vērā filtrus) — to liec žurnālā.
+      Filtrs „Žurnālā” skatās uz pēdējo mēģinājumu: ja dalībnieks testu pārkārto, jaunais rezultāts atkal ir „neievadīts”.</p>
+    <div class="bulk-bar">
+      <button type="button" class="btn-link mono" id="bulkGradeBtn"></button>
+      <button type="button" class="hint" id="bulkCancelBtn" hidden>Atcelt</button>
+      <span class="err-msg" id="bulkErr"></span>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="admin-table results-grouped" id="resultsTable">
+        <thead>
+          <tr><th>Tests</th><th>Režīms</th><th>Datums</th><th>Rezultāts</th><th>Atzīme (0,1)</th><th>Atzīme</th><th>Žurnālā</th><th></th></tr>
+        </thead>
+      </table>
+    </div>
+    <p class="empty" id="resultsEmpty" hidden></p>
+  </div>
+
+  <footer class="note mono">DATORTIKLU_TESTI · ARNISJURAGA</footer>
+</div>
+
+<script src="/js/common.js"></script>
+<script src="/js/admin-common.js"></script>
+<script src="/js/admin-results.js"></script>
+</body>
+</html>
